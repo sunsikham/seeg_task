@@ -15,11 +15,9 @@ import time
 
 trigger_timing_log = []
 
-# 펄스 타이밍 허용 오차 (초). 이 값을 초과하면 TIMING MISMATCH 로그 출력.
-_PULSE_TOLERANCE_S = 0.001  # 1 ms
-
 # Trigger latch 핀: CIO0 (CIO_STATE 비트 0)
 _LATCH_CIO_STATE = 0x01  # CIO0 = HIGH
+_EIO_TO_LATCH_DELAY_US = 2000
 
 
 # ============================================================================
@@ -125,11 +123,12 @@ def close_labjack(handle: int | None):
 # 트리거 전송
 # ============================================================================
 
-def send_trigger(handle: int | None, code: int, pulse_s: float = 0.005):
-    """EIO 포트로 TTL 트리거 펄스 전송 (블로킹, perf_counter busy-wait).
+def send_trigger(handle: int | None, code: int):
+    """EIO 코드를 설정하고 2 ms 뒤 CIO0(latch)를 HIGH로 올립니다.
 
     전송 순서:
-      EIO_STATE = code  →  CIO0(latch) HIGH  →  busy-wait  →  CIO0 LOW  →  EIO_STATE = 0
+      EIO_STATE = code  →  장치 내부 2 ms 대기  →  CIO0(latch) HIGH
+    CIO0 LOW와 EIO 초기화는 다음 프레임의 reset_trigger()가 수행합니다.
     Natus Quantum은 CIO0의 rising edge에서 EIO 데이터를 캡처한다.
     """
     started_at = time.perf_counter()
@@ -148,41 +147,10 @@ def send_trigger(handle: int | None, code: int, pulse_s: float = 0.005):
         return
 
     try:
-
-        ljm.eWriteName(handle, "EIO_STATE", int(code))
-
-        time.sleep(0.002)
-
-        ljm.eWriteName(handle, "CIO_STATE", _LATCH_CIO_STATE)
-
-        time.sleep(0.005)
-
-        ljm.eWriteName(handle, "CIO_STATE", 0)
-
-        ljm.eWriteName(handle, "EIO_STATE", 0)
-
+        names = ["EIO_STATE", "WAIT_US_BLOCKING", "CIO_STATE"]
+        values = [int(code), _EIO_TO_LATCH_DELAY_US, _LATCH_CIO_STATE]
+        ljm.eWriteNames(handle, len(names), names, values)
         success = True
-
-        '''
-        t_start = time.perf_counter()
-        #print(f"[LabJack] SEND code={hex(code)} ({t_start:.4f}s)")
-        ljm.eWriteName(handle, "EIO_STATE", int(code))
-        ljm.eWriteName(handle, "CIO_STATE", _LATCH_CIO_STATE)  # latch HIGH (rising edge → Natus 캡처)
-        while time.perf_counter() - t_start < pulse_s:
-            pass
-        ljm.eWriteName(handle, "CIO_STATE", 0)   # latch LOW
-        ljm.eWriteName(handle, "EIO_STATE", 0)   # 데이터 클리어
-        t_actual = time.perf_counter() - t_start
-        if abs(t_actual - pulse_s) > _PULSE_TOLERANCE_S:
-        '''
-        '''
-            print(
-                f"[TIMING MISMATCH] send_trigger code={code}: "
-                f"expected {pulse_s * 1000:.2f} ms, "
-                f"actual {t_actual * 1000:.2f} ms "
-                f"(diff {(t_actual - pulse_s) * 1000:+.2f} ms)"
-            )
-            '''
     except Exception as e:
         error_message = str(e)
         print(f"[LabJack] 트리거 전송 오류 (code={code}): {e}")
@@ -213,7 +181,8 @@ def reset_trigger(handle: int | None):
     if handle is None or not _LJM_AVAILABLE:
         return
     try:
-        ljm.eWriteName(handle, "CIO_STATE", 0)   # latch LOW
-        ljm.eWriteName(handle, "EIO_STATE", 0)   # 데이터 클리어
+        names = ["CIO_STATE", "EIO_STATE"]
+        values = [0, 0]
+        ljm.eWriteNames(handle, len(names), names, values)
     except Exception as e:
         print(f"[LabJack] 리셋 오류: {e}")
