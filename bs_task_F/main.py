@@ -11,7 +11,7 @@ from phase_func.test_food import run_food_task
 from phase_func.test_habitat import run_habitat_task
 from save_func.save_results import save_results_to_excel, save_results_to_excel_A
 from initiate import initiate
-from utils.labjack_trigger import init_labjack, trigger_timing_log
+from utils.labjack_trigger import trigger_timing_log
 from sys_func.frame_count import frame_log
 from config import MODE, REFRESH_RATE_TOLERANCE_HZ, TARGET_REFRESH_HZ
 import pandas as pd
@@ -21,7 +21,6 @@ import os
 
 def main():
     save_directory,handle = initiate()
-    init_labjack()
  
     win = visual.Window(
         size=(1280, 800),
