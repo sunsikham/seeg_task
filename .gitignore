@@ -1,0 +1,52 @@
+# Raw neurophysiology data
+*.EDF
+*.edf
+*.BDF
+*.bdf
+
+# Participant behavioral data and archives
+bs_task_F/data/
+bs_task_F/Data/
+*.zip
+
+# Experiment reference materials not tracked in this repository
+*.pptx
+bs_task_F/sounds/
+
+# Generated EDF profiling artifacts
+artifact.json
+edf_profile.json
+edf_profile.sqlite
+report.html
+
+# Python environments and caches
+.venv/
+venv/
+env/
+new_env/
+new_ven/
+__pycache__/
+*.py[cod]
+*.pyd
+
+# Test and tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# PsychoPy and runtime outputs
+*.log
+*.psydat
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local secrets and environment variables
+.env
+.env.*
+!.env.example

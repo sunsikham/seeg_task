@@ -1,0 +1,364 @@
+{
+  "trials": [
+    {
+      "trial_id": 1,
+      "premise": "소",
+      "option1": "흑곰",
+      "option2": "고슴도치",
+      "correct": "left",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 2,
+      "premise": "소",
+      "option1": "쥐",
+      "option2": "흑곰",
+      "correct": "right",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 3,
+      "premise": "양",
+      "option1": "여우",
+      "option2": "고슴도치",
+      "correct": "left",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 4,
+      "premise": "양",
+      "option1": "쥐",
+      "option2": "여우",
+      "correct": "right",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 5,
+      "premise": "고슴도치",
+      "option1": "흑곰",
+      "option2": "소",
+      "correct": "left",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 6,
+      "premise": "고슴도치",
+      "option1": "양",
+      "option2": "여우",
+      "correct": "right",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 7,
+      "premise": "쥐",
+      "option1": "고슴도치",
+      "option2": "소",
+      "correct": "left",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 8,
+      "premise": "쥐",
+      "option1": "양",
+      "option2": "고슴도치",
+      "correct": "right",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 9,
+      "premise": "쥐",
+      "option1": "흑곰",
+      "option2": "소",
+      "correct": "left",
+      "rationale": "+2 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 10,
+      "premise": "쥐",
+      "option1": "양",
+      "option2": "여우",
+      "correct": "right",
+      "rationale": "+2 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 11,
+      "premise": "쥐",
+      "option1": "고슴도치",
+      "option2": "흑곰",
+      "correct": "left",
+      "rationale": "+1 vs +2",
+      "task_type": "Food-distance"
+    },
+    {
+      "trial_id": 12,
+      "premise": "쥐",
+      "option1": "여우",
+      "option2": "고슴도치",
+      "correct": "right",
+      "rationale": "+1 vs +2",
+      "task_type": "Food-distance"
+    },
+    {
+      "trial_id": 13,
+      "premise": "소",
+      "option1": "흑곰",
+      "option2": "여우",
+      "correct": "left",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 14,
+      "premise": "양",
+      "option1": "흑곰",
+      "option2": "여우",
+      "correct": "right",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 15,
+      "premise": "소",
+      "option1": "흑곰",
+      "option2": "양",
+      "correct": "left",
+      "rationale": "+1 vs 0",
+      "task_type": "Conflict"
+    },
+    {
+      "trial_id": 16,
+      "premise": "양",
+      "option1": "소",
+      "option2": "여우",
+      "correct": "right",
+      "rationale": "+1 vs 0",
+      "task_type": "Conflict"
+    },
+    {
+      "trial_id": 17,
+      "premise": "고슴도치",
+      "option1": "흑곰",
+      "option2": "쥐",
+      "correct": "left",
+      "rationale": "+1 vs -1",
+      "task_type": "Conflict"
+    },
+    {
+      "trial_id": 18,
+      "premise": "고슴도치",
+      "option1": "쥐",
+      "option2": "여우",
+      "correct": "right",
+      "rationale": "+1 vs -1",
+      "task_type": "Conflict"
+    },
+    {
+      "trial_id": 19,
+      "premise": "쥐",
+      "option1": "고슴도치",
+      "option2": "여우",
+      "correct": "left",
+      "rationale": "+2 vs +1",
+      "task_type": "Conflict / distance"
+    },
+    {
+      "trial_id": 20,
+      "premise": "쥐",
+      "option1": "흑곰",
+      "option2": "고슴도치",
+      "correct": "right",
+      "rationale": "+2 vs +1",
+      "task_type": "Conflict / distance"
+    },
+    {
+      "trial_id": 21,
+      "premise": "소",
+      "option1": "고슴도치",
+      "option2": "흑곰",
+      "correct": "right",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 22,
+      "premise": "소",
+      "option1": "흑곰",
+      "option2": "쥐",
+      "correct": "left",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 23,
+      "premise": "양",
+      "option1": "고슴도치",
+      "option2": "여우",
+      "correct": "right",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 24,
+      "premise": "양",
+      "option1": "여우",
+      "option2": "쥐",
+      "correct": "left",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 25,
+      "premise": "고슴도치",
+      "option1": "소",
+      "option2": "흑곰",
+      "correct": "right",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 26,
+      "premise": "고슴도치",
+      "option1": "여우",
+      "option2": "양",
+      "correct": "left",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 27,
+      "premise": "쥐",
+      "option1": "소",
+      "option2": "고슴도치",
+      "correct": "right",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 28,
+      "premise": "쥐",
+      "option1": "고슴도치",
+      "option2": "양",
+      "correct": "left",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 29,
+      "premise": "쥐",
+      "option1": "소",
+      "option2": "흑곰",
+      "correct": "right",
+      "rationale": "+2 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 30,
+      "premise": "쥐",
+      "option1": "여우",
+      "option2": "양",
+      "correct": "left",
+      "rationale": "+2 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 31,
+      "premise": "쥐",
+      "option1": "흑곰",
+      "option2": "고슴도치",
+      "correct": "right",
+      "rationale": "+1 vs +2",
+      "task_type": "Food-distance"
+    },
+    {
+      "trial_id": 32,
+      "premise": "쥐",
+      "option1": "고슴도치",
+      "option2": "여우",
+      "correct": "left",
+      "rationale": "+1 vs +2",
+      "task_type": "Food-distance"
+    },
+    {
+      "trial_id": 33,
+      "premise": "소",
+      "option1": "여우",
+      "option2": "흑곰",
+      "correct": "right",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 34,
+      "premise": "양",
+      "option1": "여우",
+      "option2": "흑곰",
+      "correct": "left",
+      "rationale": "+1 vs 0",
+      "task_type": "Food"
+    },
+    {
+      "trial_id": 35,
+      "premise": "소",
+      "option1": "양",
+      "option2": "흑곰",
+      "correct": "right",
+      "rationale": "+1 vs 0",
+      "task_type": "Conflict"
+    },
+    {
+      "trial_id": 36,
+      "premise": "양",
+      "option1": "여우",
+      "option2": "소",
+      "correct": "left",
+      "rationale": "+1 vs 0",
+      "task_type": "Conflict"
+    },
+    {
+      "trial_id": 37,
+      "premise": "고슴도치",
+      "option1": "쥐",
+      "option2": "흑곰",
+      "correct": "right",
+      "rationale": "+1 vs -1",
+      "task_type": "Conflict"
+    },
+    {
+      "trial_id": 38,
+      "premise": "고슴도치",
+      "option1": "여우",
+      "option2": "쥐",
+      "correct": "left",
+      "rationale": "+1 vs -1",
+      "task_type": "Conflict"
+    },
+    {
+      "trial_id": 39,
+      "premise": "쥐",
+      "option1": "여우",
+      "option2": "고슴도치",
+      "correct": "right",
+      "rationale": "+2 vs +1",
+      "task_type": "Conflict / distance"
+    },
+    {
+      "trial_id": 40,
+      "premise": "쥐",
+      "option1": "고슴도치",
+      "option2": "흑곰",
+      "correct": "left",
+      "rationale": "+2 vs +1",
+      "task_type": "Conflict / distance"
+    }
+  ]
+}
