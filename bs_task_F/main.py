@@ -19,9 +19,23 @@ import random
 import os
 #.\new_ven\Scripts\activate  이후 python main.py 
 
-def main():
-    save_directory,handle = initiate()
- 
+
+def save_diagnostic_logs(save_directory):
+    diagnostic_logs = (
+        (frame_log, "frame_log.xlsx"),
+        (trigger_timing_log, "trigger_timing_log.xlsx"),
+    )
+
+    for log_data, filename in diagnostic_logs:
+        save_path = os.path.join(save_directory, filename)
+        try:
+            pd.DataFrame(log_data).to_excel(save_path, index=False)
+            print(f"[Diagnostics] saved: {save_path}")
+        except Exception as e:
+            print(f"[Diagnostics] failed to save {filename}: {e}")
+
+
+def run_experiment(save_directory, handle):
     win = visual.Window(
         size=(1280, 800),
         fullscr=True,
@@ -181,20 +195,20 @@ def main():
     )
     
     save_results_to_excel(results,save_directory, "results_t.xlsx")
-    df = pd.DataFrame(frame_log)
-
-    save_path = os.path.join(save_directory, "frame_log.xlsx")
-
-    df.to_excel(save_path, index=False)
-
-    trigger_df = pd.DataFrame(trigger_timing_log)
-    trigger_save_path = os.path.join(save_directory, "trigger_timing_log.xlsx")
-    trigger_df.to_excel(trigger_save_path, index=False)
 
     print(results)
 
     win.close()
     core.quit()
+
+
+def main():
+    save_directory, handle = initiate()
+
+    try:
+        run_experiment(save_directory, handle)
+    finally:
+        save_diagnostic_logs(save_directory)
 
 
 if __name__ == "__main__":

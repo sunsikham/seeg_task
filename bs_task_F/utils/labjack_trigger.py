@@ -14,6 +14,8 @@ except ImportError:
 import time
 
 trigger_timing_log = []
+_active_trigger_entry = None
+_next_trigger_sequence = 1
 
 # Trigger latch 핀: CIO0 (CIO_STATE 비트 0)
 _LATCH_CIO_STATE = 0x01  # CIO0 = HIGH
@@ -131,37 +133,57 @@ def send_trigger(handle: int | None, code: int):
     CIO0 LOW와 EIO 초기화는 다음 프레임의 reset_trigger()가 수행합니다.
     Natus Quantum은 CIO0의 rising edge에서 EIO 데이터를 캡처한다.
     """
+    global _active_trigger_entry
+    global _next_trigger_sequence
+
+    if _active_trigger_entry is not None:
+        _active_trigger_entry["reset_success"] = False
+        _active_trigger_entry["reset_error"] = (
+            "reset_trigger was not called before the next trigger"
+        )
+        _active_trigger_entry = None
+
     started_at = time.perf_counter()
     success = False
     error_message = ""
 
-    if handle is None or not _LJM_AVAILABLE:
-        error_message = "LabJack unavailable"
-        trigger_timing_log.append({
-            "trigger_code": int(code),
-            "started_perf_counter": started_at,
-            "duration_ms": 0.0,
-            "success": success,
-            "error": error_message,
-        })
-        return
+    entry = {
+        "trigger_sequence": _next_trigger_sequence,
+        "trigger_code": int(code),
+        "send_started_perf_counter": started_at,
+        "send_finished_perf_counter": None,
+        "send_duration_ms": None,
+        "send_success": False,
+        "send_error": "",
+        "reset_started_perf_counter": None,
+        "reset_finished_perf_counter": None,
+        "reset_duration_ms": None,
+        "reset_success": None,
+        "reset_error": "",
+        "send_start_to_reset_start_ms": None,
+    }
+    _next_trigger_sequence += 1
+    trigger_timing_log.append(entry)
+    _active_trigger_entry = entry
 
     try:
-        names = ["EIO_STATE", "WAIT_US_BLOCKING", "CIO_STATE"]
-        values = [int(code), _EIO_TO_LATCH_DELAY_US, _LATCH_CIO_STATE]
-        ljm.eWriteNames(handle, len(names), names, values)
-        success = True
+        if handle is None or not _LJM_AVAILABLE:
+            error_message = "LabJack unavailable"
+        else:
+            names = ["EIO_STATE", "WAIT_US_BLOCKING", "CIO_STATE"]
+            values = [int(code), _EIO_TO_LATCH_DELAY_US, _LATCH_CIO_STATE]
+            ljm.eWriteNames(handle, len(names), names, values)
+            success = True
     except Exception as e:
         error_message = str(e)
         print(f"[LabJack] 트리거 전송 오류 (code={code}): {e}")
     finally:
         finished_at = time.perf_counter()
-        trigger_timing_log.append({
-            "trigger_code": int(code),
-            "started_perf_counter": started_at,
-            "duration_ms": (finished_at - started_at) * 1000.0,
-            "success": success,
-            "error": error_message,
+        entry.update({
+            "send_finished_perf_counter": finished_at,
+            "send_duration_ms": (finished_at - started_at) * 1000.0,
+            "send_success": success,
+            "send_error": error_message,
         })
 
 
@@ -177,12 +199,53 @@ def send_trigger_async(handle: int | None, code: int):
 
 
 def reset_trigger(handle: int | None):
-    """CIO0(latch)를 LOW로 내리고 EIO_STATE를 0으로 리셋합니다."""
+    """CIO0(latch)를 LOW로 내리고 EIO_STATE를 0으로 리셋하고 결과를 기록합니다."""
+    global _active_trigger_entry
+
+    started_at = time.perf_counter()
+    success = False
+    error_message = ""
+
     if handle is None or not _LJM_AVAILABLE:
+        error_message = "LabJack unavailable"
+    else:
+        try:
+            names = ["CIO_STATE", "EIO_STATE"]
+            values = [0, 0]
+            ljm.eWriteNames(handle, len(names), names, values)
+            success = True
+        except Exception as e:
+            error_message = str(e)
+            print(f"[LabJack] 리셋 오류: {e}")
+    finished_at = time.perf_counter()
+
+    if _active_trigger_entry is None:
+        trigger_timing_log.append({
+            "trigger_sequence": None,
+            "trigger_code": None,
+            "send_started_perf_counter": None,
+            "send_finished_perf_counter": None,
+            "send_duration_ms": None,
+            "send_success": None,
+            "send_error": "orphan reset without an active trigger",
+            "reset_started_perf_counter": started_at,
+            "reset_finished_perf_counter": finished_at,
+            "reset_duration_ms": (finished_at - started_at) * 1000.0,
+            "reset_success": success,
+            "reset_error": error_message,
+            "send_start_to_reset_start_ms": None,
+        })
         return
-    try:
-        names = ["CIO_STATE", "EIO_STATE"]
-        values = [0, 0]
-        ljm.eWriteNames(handle, len(names), names, values)
-    except Exception as e:
-        print(f"[LabJack] 리셋 오류: {e}")
+
+    send_started_at = _active_trigger_entry["send_started_perf_counter"]
+    _active_trigger_entry.update({
+        "reset_started_perf_counter": started_at,
+        "reset_finished_perf_counter": finished_at,
+        "reset_duration_ms": (finished_at - started_at) * 1000.0,
+        "reset_success": success,
+        "reset_error": error_message,
+        "send_start_to_reset_start_ms": (
+            (started_at - send_started_at) * 1000.0
+        ),
+    })
+    _active_trigger_entry = None
