@@ -218,6 +218,13 @@ def run_trial(win, trial, handle,index):
                 size=(50, 50)
             )
 
+        if 0 <= frame_count - waiting_frames < FRAME_EXAMPLE_bss:
+            draw_white_marker(
+                win,
+                pos=(-WIDTH//2 + 120, -HEIGHT//2 + 120),
+                size=(50, 50)
+            )
+
         # ===== draw =====
         question.draw()
 
@@ -249,6 +256,22 @@ def run_trial(win, trial, handle,index):
                 handle
             )
 
+        # 선택지 첫 화면과 RT 시작/트리거를 같은 flip에 맞춤
+        if frame_count == waiting_frames:
+            win.callOnFlip(rt2_clock.reset)
+            win.callOnFlip(
+                send_trigger,
+                handle,
+                TRIG_B_SELECTSTART
+            )
+
+        # trigger OFF
+        elif frame_count == waiting_frames+1:
+            win.callOnFlip(
+                reset_trigger,
+                handle
+            )
+
         # ===== flip =====
         flip_time = win.flip()
         if frame_count < waiting_frames:
@@ -263,33 +286,6 @@ def run_trial(win, trial, handle,index):
             phase=phase
         )
 
-
-        if frame_count-waiting_frames < FRAME_EXAMPLE_bss and frame_count-waiting_frames >= 0 :
-            draw_white_marker(
-                win,
-                pos=(-WIDTH//2 + 120, -HEIGHT//2 + 120),
-                size=(50, 50)
-            )
-
-        # 선택지가 처음 보인 순간부터 RT 측정
-        if frame_count == waiting_frames:
-            rt2_clock.reset()
-
-        if frame_count == waiting_frames:
-
-            win.callOnFlip(
-                send_trigger,
-                handle,
-                TRIG_B_SELECTSTART
-            )
-
-        # trigger OFF
-        elif frame_count == waiting_frames+1:
-
-            win.callOnFlip(
-                reset_trigger,
-                handle
-            )
 
         if frame_count < waiting_frames:
             event.clearEvents()
