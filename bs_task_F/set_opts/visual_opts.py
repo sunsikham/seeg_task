@@ -1,5 +1,12 @@
 # ui_config.py
 
+from config import (
+    FEEDBACK_DURATION_S,
+    FEEDBACK_FRAMES,
+    RESPONSE_TIMEOUT_FRAMES,
+    RESPONSE_TIMEOUT_S,
+)
+
 UI_CONFIG = {
     # ===== 텍스트 =====
     "question": {
@@ -49,10 +56,10 @@ UI_CONFIG = {
 
     # ===== 타이밍 =====
     "timing": {
-        "timeout": 10.0,
-        "timeout_frames": 10000,
-        "feedback_duration": 0.5,
-        "feedback_frames":120,
+        "timeout": RESPONSE_TIMEOUT_S,
+        "timeout_frames": RESPONSE_TIMEOUT_FRAMES,
+        "feedback_duration": FEEDBACK_DURATION_S,
+        "feedback_frames": FEEDBACK_FRAMES,
         "iti": 0.3,   # trial 간 간격
         "show_full" : 1800,
         "show_random" : 1200

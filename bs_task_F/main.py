@@ -13,7 +13,7 @@ from save_func.save_results import save_results_to_excel, save_results_to_excel_
 from initiate import initiate
 from utils.labjack_trigger import init_labjack, trigger_timing_log
 from sys_func.frame_count import frame_log
-from config import MODE
+from config import MODE, REFRESH_RATE_TOLERANCE_HZ, TARGET_REFRESH_HZ
 import pandas as pd
 import random
 import os
@@ -29,6 +29,23 @@ def main():
         units="pix",
         color="lightgray"
     )
+
+    actual_refresh_hz = win.getActualFrameRate()
+    if actual_refresh_hz is None:
+        win.close()
+        raise RuntimeError(
+            "모니터 주사율을 안정적으로 측정하지 못했습니다. "
+            "실험을 시작하지 않습니다."
+        )
+
+    if abs(actual_refresh_hz - TARGET_REFRESH_HZ) > REFRESH_RATE_TOLERANCE_HZ:
+        win.close()
+        raise RuntimeError(
+            f"모니터 주사율이 {actual_refresh_hz:.2f} Hz로 측정되었습니다. "
+            f"{TARGET_REFRESH_HZ} Hz로 설정한 뒤 다시 실행하세요."
+        )
+
+    print(f"[Display] refresh rate: {actual_refresh_hz:.2f} Hz")
 
 
      # 질문 한국어로 수정

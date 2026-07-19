@@ -36,8 +36,8 @@ NAV = {
 }
  
 # ── 프레임 설정 ───────────────────────────────────────────────────────────────
-FPS = 60   # 모니터 주사율에 맞춰 조정 (60Hz 가정)
-FEEDBACK_FRAMES = int(0.6 * FPS)   # 피드백(초록/빨강) 표시 프레임 수 (약 0.6초)
+FPS = 144
+FEEDBACK_FRAMES = int(0.5 * FPS)   # 피드백(초록/빨강) 표시 프레임 수 (0.5초)
 END_FRAMES      = int(2.5 * FPS)   # 완료 화면 표시 프레임 수 (약 2.5초)
  
 frame_n = 0   # 전체 프레임 카운터 (기록용)
@@ -51,7 +51,18 @@ PRV_W, PRV_H  = 120, 70
 """
 
 from utils.labjack_trigger import send_trigger, reset_trigger,  TRIG_G_CHECK_START, TRIG_G_CHECK_RESPOND
-from config import WAITING,HEIGHT,WIDTH, HANDLE,FRAME_EXAMPLE_gcs,FRAME_EXAMPLE_gcf
+from config import (
+    WAITING,
+    HEIGHT,
+    WIDTH,
+    HANDLE,
+    FRAME_EXAMPLE_gcs,
+    FRAME_EXAMPLE_gcf,
+    PRACTICE_DONE_FRAMES,
+    PRACTICE_FEEDBACK_FRAMES,
+    PRACTICE_PHASE_GAP_FRAMES,
+    TARGET_REFRESH_HZ,
+)
 from phase_func.show_info import  show_all_gene_phase
 from sys_func.frame_count import frame_timer
  
@@ -70,9 +81,9 @@ if not os.path.isdir(STIMULI_DIR):
     raise FileNotFoundError(f"stimuli 폴더를 찾을 수 없습니다: {STIMULI_DIR}")
  
 # ── 프레임 설정 ───────────────────────────────────────────────────────────────
-FPS             = 60
-FEEDBACK_FRAMES = int(0.6 * FPS)
-DONE_FRAMES     = int(2.5 * FPS)
+FPS             = TARGET_REFRESH_HZ
+FEEDBACK_FRAMES = PRACTICE_FEEDBACK_FRAMES
+DONE_FRAMES     = PRACTICE_DONE_FRAMES
  
 # ── 빈칸 / 선택지 크기 ────────────────────────────────────────────────────────
 BOX_W, BOX_H     = 165, 150
@@ -562,7 +573,7 @@ def run_gene_task(win,handle):
  
     for phase_def in shuffled_phases:
         # 페이즈 간 공백 0.5초
-        for _ in range(int(0.5 * FPS)):
+        for _ in range(PRACTICE_PHASE_GAP_FRAMES):
             flip_time = win.flip()
 
             frame_timer(

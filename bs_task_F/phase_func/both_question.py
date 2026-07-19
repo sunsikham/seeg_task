@@ -203,14 +203,12 @@ def run_trial(win, trial, handle,index):
   
 
     # =========================
-    # response phase
+    # premise phase
     # =========================
     frame_count = 0
-    timeout_frames = cfg["timing"]["timeout_frames"]
 
-    while frame_count < timeout_frames:
+    while frame_count < waiting_frames:
 
-        # ===== marker =====
         if frame_count < FRAME_EXAMPLE_bs:
             draw_white_marker(
                 win,
@@ -218,211 +216,141 @@ def run_trial(win, trial, handle,index):
                 size=(50, 50)
             )
 
-        if 0 <= frame_count - waiting_frames < FRAME_EXAMPLE_bss:
+        question.draw()
+        premise_image.draw()
+
+        if frame_count == 0:
+            win.callOnFlip(
+                send_trigger,
+                handle,
+                TRIG_B_START
+            )
+        elif frame_count == 1:
+            win.callOnFlip(
+                reset_trigger,
+                handle
+            )
+
+        flip_time = win.flip()
+        frame_timer(
+            flip_time=flip_time,
+            trial_index=index,
+            task_type=trial["task_type"],
+            phase="premise_onset"
+        )
+
+        event.clearEvents()
+        frame_count += 1
+
+    # =========================
+    # option / response phase
+    # =========================
+    frame_count = 0
+    timeout_frames = cfg["timing"]["timeout_frames"]
+
+    while frame_count < timeout_frames:
+
+        if frame_count < FRAME_EXAMPLE_bss:
             draw_white_marker(
                 win,
                 pos=(-WIDTH//2 + 120, -HEIGHT//2 + 120),
                 size=(50, 50)
             )
 
-        # ===== draw =====
         question.draw()
-
-        # premise 이미지 draw
         premise_image.draw()
+        left_option.draw()
+        right_option.draw()
+        left_image.draw()
+        right_image.draw()
+        left_arrow.draw()
+        right_arrow.draw()
 
-        if frame_count >= waiting_frames:
-            left_option.draw()
-            right_option.draw()
-            left_image.draw()
-            right_image.draw()
-            left_arrow.draw()
-            right_arrow.draw()
-
-        # trigger ON
         if frame_count == 0:
-
-            win.callOnFlip(
-                send_trigger,
-                handle,
-                TRIG_B_START
-            )
-
-        # trigger OFF
-        elif frame_count == 1:
-
-            win.callOnFlip(
-                reset_trigger,
-                handle
-            )
-
-        # 선택지 첫 화면과 RT 시작/트리거를 같은 flip에 맞춤
-        if frame_count == waiting_frames:
             win.callOnFlip(rt2_clock.reset)
             win.callOnFlip(
                 send_trigger,
                 handle,
                 TRIG_B_SELECTSTART
             )
-
-        # trigger OFF
-        elif frame_count == waiting_frames+1:
-            win.callOnFlip(
-                reset_trigger,
-                handle
-            )
-
-        # ===== flip =====
-        flip_time = win.flip()
-        if frame_count < waiting_frames:
-            phase = "premise_onset"
-        else:
-            phase = "option_onset"
-
-        frame_timer(
-            flip_time=flip_time,
-            trial_index=index,
-            task_type=trial["task_type"],
-            phase=phase
-        )
-
-
-        if frame_count < waiting_frames:
-            event.clearEvents()
-
-        
-
-        # ===== key check =====
-        elif frame_count >= waiting_frames:
-
-            keys = event.getKeys(
-                keyList=["left", "right", "escape"],
-                timeStamped=clock
-            )
-
-            if keys:
-
-                key, rt = keys[0]
-                rt2 = rt2_clock.getTime()
-
-                if key == "escape":
-                    core.quit()
-                    #return response, rt
-
-                if key == "left":
-
-                    left_arrow.color = (
-                        cfg["arrow"]["active_color"]
-                    )
-
-                    response = "left"
-
-                else:
-
-                    right_arrow.color = (
-                        cfg["arrow"]["active_color"]
-                    )
-
-                    response = "right"
-
-                break
-
-        frame_count += 1
-
-    # =========================
-    # response trigger phase
-    # =========================
-    frame_count = 0
-
-    while frame_count < 2:
-
-        question.draw()
-
-        # premise 이미지 draw
-        premise_image.draw()
-
-        left_option.draw()
-        right_option.draw()
-
-        left_image.draw()
-        right_image.draw()
-
-        left_arrow.draw()
-        right_arrow.draw()
-
-        # ON
-
-        
-        if frame_count == 0 and trial['correct']==response:
-
-            win.callOnFlip(
-                send_trigger,
-                handle,
-                TRIG_B_RESPOND
-            )
-
-        elif frame_count == 0 and trial['correct']!=response:
-
-            win.callOnFlip(
-                send_trigger,
-                handle,
-                TRIG_B_WRONGRESPOND
-            )
-
-        # OFF
         elif frame_count == 1:
-
             win.callOnFlip(
                 reset_trigger,
                 handle
             )
 
         flip_time = win.flip()
-        if frame_count < waiting_frames:
-            phase = "premise_onset"
-        else:
-            phase = "option_onset"
-
         frame_timer(
             flip_time=flip_time,
             trial_index=index,
             task_type=trial["task_type"],
-            phase=phase
+            phase="option_onset"
         )
+
+        keys = event.getKeys(
+            keyList=["left", "right", "escape"],
+            timeStamped=clock
+        )
+
+        if keys:
+            key, rt = keys[0]
+            rt2 = rt2_clock.getTime()
+
+            if key == "escape":
+                core.quit()
+
+            if key == "left":
+                left_arrow.color = cfg["arrow"]["active_color"]
+                response = "left"
+            else:
+                right_arrow.color = cfg["arrow"]["active_color"]
+                response = "right"
+
+            break
 
         frame_count += 1
 
     # =========================
-    # feedback phase
+    # feedback phase (response trigger 포함, 총 0.5초)
     # =========================
     frame_count = 0
     feedback_frames = cfg["timing"]["feedback_frames"]
 
     while frame_count < feedback_frames:
 
-        # ===== marker =====
         if frame_count < FRAME_EXAMPLE_bf:
-
             draw_white_marker(
                 win,
                 pos=(-WIDTH//2 + 120, -HEIGHT//2 + 120),
                 size=(50, 50)
             )
 
-        # ===== draw =====
         question.draw()
-
-        # premise 이미지 draw
         premise_image.draw()
-
         left_option.draw()
         right_option.draw()
-
         left_image.draw()
         right_image.draw()
-
         left_arrow.draw()
         right_arrow.draw()
+
+        if frame_count == 0 and trial['correct'] == response:
+            win.callOnFlip(
+                send_trigger,
+                handle,
+                TRIG_B_RESPOND
+            )
+        elif frame_count == 0:
+            win.callOnFlip(
+                send_trigger,
+                handle,
+                TRIG_B_WRONGRESPOND
+            )
+        elif frame_count == 1:
+            win.callOnFlip(
+                reset_trigger,
+                handle
+            )
 
         flip_time = win.flip()
         frame_timer(
