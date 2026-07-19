@@ -13,6 +13,8 @@ except ImportError:
 
 import time
 
+trigger_timing_log = []
+
 # 펄스 타이밍 허용 오차 (초). 이 값을 초과하면 TIMING MISMATCH 로그 출력.
 _PULSE_TOLERANCE_S = 0.001  # 1 ms
 
@@ -130,8 +132,21 @@ def send_trigger(handle: int | None, code: int, pulse_s: float = 0.005):
       EIO_STATE = code  →  CIO0(latch) HIGH  →  busy-wait  →  CIO0 LOW  →  EIO_STATE = 0
     Natus Quantum은 CIO0의 rising edge에서 EIO 데이터를 캡처한다.
     """
+    started_at = time.perf_counter()
+    success = False
+    error_message = ""
+
     if handle is None or not _LJM_AVAILABLE:
+        error_message = "LabJack unavailable"
+        trigger_timing_log.append({
+            "trigger_code": int(code),
+            "started_perf_counter": started_at,
+            "duration_ms": 0.0,
+            "success": success,
+            "error": error_message,
+        })
         return
+
     try:
 
         ljm.eWriteName(handle, "EIO_STATE", int(code))
@@ -145,6 +160,8 @@ def send_trigger(handle: int | None, code: int, pulse_s: float = 0.005):
         ljm.eWriteName(handle, "CIO_STATE", 0)
 
         ljm.eWriteName(handle, "EIO_STATE", 0)
+
+        success = True
 
         '''
         t_start = time.perf_counter()
@@ -167,7 +184,17 @@ def send_trigger(handle: int | None, code: int, pulse_s: float = 0.005):
             )
             '''
     except Exception as e:
+        error_message = str(e)
         print(f"[LabJack] 트리거 전송 오류 (code={code}): {e}")
+    finally:
+        finished_at = time.perf_counter()
+        trigger_timing_log.append({
+            "trigger_code": int(code),
+            "started_perf_counter": started_at,
+            "duration_ms": (finished_at - started_at) * 1000.0,
+            "success": success,
+            "error": error_message,
+        })
 
 
 def send_trigger_async(handle: int | None, code: int):

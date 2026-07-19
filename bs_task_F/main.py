@@ -11,7 +11,7 @@ from phase_func.test_food import run_food_task
 from phase_func.test_habitat import run_habitat_task
 from save_func.save_results import save_results_to_excel, save_results_to_excel_A
 from initiate import initiate
-from utils.labjack_trigger import init_labjack
+from utils.labjack_trigger import init_labjack, trigger_timing_log
 from sys_func.frame_count import frame_log
 from config import MODE
 import pandas as pd
@@ -170,6 +170,10 @@ def main():
     save_path = os.path.join(save_directory, "frame_log.xlsx")
 
     df.to_excel(save_path, index=False)
+
+    trigger_df = pd.DataFrame(trigger_timing_log)
+    trigger_save_path = os.path.join(save_directory, "trigger_timing_log.xlsx")
+    trigger_df.to_excel(trigger_save_path, index=False)
 
     print(results)
 
