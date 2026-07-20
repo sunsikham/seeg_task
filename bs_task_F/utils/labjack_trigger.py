@@ -8,10 +8,14 @@
 try:
     from labjack import ljm
     _LJM_AVAILABLE = True
-except ImportError:
+    _LJM_IMPORT_ERROR = ""
+except Exception as e:
+    ljm = None
     _LJM_AVAILABLE = False
+    _LJM_IMPORT_ERROR = str(e)
 
 import time
+from config import USE_LABJACK
 
 trigger_timing_log = []
 _active_trigger_entry = None
@@ -82,10 +86,15 @@ def init_labjack(device: str = "T4",
                  connection: str = "USB",
                  identifier: str = "ANY") -> int | None:
     # LabJack T4 연결
-    if not _LJM_AVAILABLE:
-        print("[LabJack] ljm 라이브러리를 찾을 수 없습니다. 트리거가 비활성화됩니다.")
+    if not USE_LABJACK:
         return None
 
+    if not _LJM_AVAILABLE:
+        detail = f" ({_LJM_IMPORT_ERROR})" if _LJM_IMPORT_ERROR else ""
+        print(f"[LabJack] LJM 사용 불가{detail}. TTL 트리거를 비활성화합니다.")
+        return None
+
+    handle = None
     try:
         handle = ljm.openS(device, connection, identifier)
         info   = ljm.getHandleInfo(handle)
@@ -105,6 +114,11 @@ def init_labjack(device: str = "T4",
         return handle
 
     except Exception as e:
+        if handle is not None:
+            try:
+                ljm.close(handle)
+            except Exception:
+                pass
         print(f"[LabJack] 연결 실패: {e}")
         return None
 
@@ -115,10 +129,14 @@ def close_labjack(handle: int | None):
     try:
         ljm.eWriteName(handle, "CIO_STATE", 0)
         ljm.eWriteName(handle, "EIO_STATE", 0)
-        ljm.close(handle)
-        print("[LabJack] 연결 종료")
     except Exception as e:
-        print(f"[LabJack] 종료 오류: {e}")
+        print(f"[LabJack] 출력 리셋 오류: {e}")
+    finally:
+        try:
+            ljm.close(handle)
+            print("[LabJack] 연결 종료")
+        except Exception as e:
+            print(f"[LabJack] 종료 오류: {e}")
 
 
 # ============================================================================
@@ -135,6 +153,9 @@ def send_trigger(handle: int | None, code: int):
     """
     global _active_trigger_entry
     global _next_trigger_sequence
+
+    if not USE_LABJACK:
+        return
 
     if _active_trigger_entry is not None:
         _active_trigger_entry["reset_success"] = False
@@ -189,7 +210,7 @@ def send_trigger(handle: int | None, code: int):
 
 def send_trigger_async(handle: int | None, code: int):
     """EIO_STATE + CIO0(latch) 설정 (비블로킹). 리셋은 호출자가 reset_trigger()로 처리."""
-    if handle is None or not _LJM_AVAILABLE:
+    if not USE_LABJACK or handle is None or not _LJM_AVAILABLE:
         return
     try:
         ljm.eWriteName(handle, "EIO_STATE", int(code))
@@ -201,6 +222,9 @@ def send_trigger_async(handle: int | None, code: int):
 def reset_trigger(handle: int | None):
     """CIO0(latch)를 LOW로 내리고 EIO_STATE를 0으로 리셋하고 결과를 기록합니다."""
     global _active_trigger_entry
+
+    if not USE_LABJACK:
+        return
 
     started_at = time.perf_counter()
     success = False

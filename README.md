@@ -162,15 +162,27 @@ Linux에서는 `Data/`와 `data/`가 서로 다른 폴더이므로 주의해야 
 | 2 | food + habitat |
 | 3 | food + gene |
 
-현재 설정은 코드의 `config.py`를 직접 확인해야 합니다. 참가자별 재현성을
-위해 앞으로는 실행 당시의 MODE와 코드 버전을 메타데이터에 함께 저장하는
-것을 권장합니다.
+현재 설정은 코드의 `config.py`를 직접 확인해야 합니다. 실행 당시의
+MODE는 참가자 메타데이터에 저장됩니다.
+
+### 세션 모드
+
+`bs_task_F/config.py`의 `SESSION_TYPE`으로 녹화 환경을 선택합니다.
+
+| SESSION_TYPE | 주사율 | LabJack TTL | 동기화 마커 |
+|---|---:|---|---|
+| `BEHAVIORAL` | 60 Hz | 비활성 | 숨김 |
+| `SEEG` | 144 Hz | 활성 | 표시 |
+
+기본값은 `BEHAVIORAL`입니다. 각 모드의 주사율과 실제 모니터 주사율이
+±1 Hz 범위에서 일치해야 실험이 시작됩니다. 선택한 세션 모드, 목표·실제
+주사율, LabJack 활성·연결 여부는 `metadata.txt`에 저장됩니다.
 
 ## 주요 출력 파일
 
 참가자 폴더에는 다음 파일이 생성됩니다.
 
-- `metadata.txt`: 참가자 ID, 실행 시각, 운영체제
+- `metadata.txt`: 참가자 ID, 실행 시각, 세션·과제 모드, 주사율, LabJack 상태
 - `results_t.xlsx`: trial 정보, 반응, 반응시간, 정오답
 - `frame_log.xlsx`: PsychoPy 화면 flip 시각과 프레임 간격
 

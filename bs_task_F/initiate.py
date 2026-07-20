@@ -3,8 +3,8 @@ import os
 import sys
 import platform
 from datetime import datetime
-from labjack import ljm
-from config import HANDLE
+from config import MODE, SESSION_TYPE, TARGET_REFRESH_HZ, USE_LABJACK
+from utils.labjack_trigger import init_labjack
 
 
 def define_save(base_dir, subject_id):
@@ -57,40 +57,23 @@ def initiate():
     print(f"Data will be saved to: {save_directory}")
 
 
-    # 메타데이터 저장 (간단하게 텍스트로 저장)
+    if USE_LABJACK:
+        # 패키지, 드라이버 또는 장치가 없으면 None을 반환한다.
+        handle = init_labjack(device="T4", connection="ANY", identifier="ANY")
+    else:
+        handle = None
+        print("[LabJack] BEHAVIORAL 모드에서 TTL 트리거를 비활성화합니다.")
+
     metadata_path = os.path.join(save_directory, 'metadata.txt')
-    with open(metadata_path, 'w') as f:
+    with open(metadata_path, 'w', encoding='utf-8') as f:
         f.write(f"Subject ID: {subject_id}\n")
         f.write(f"Date: {datetime.now()}\n")
         f.write(f"OS: {os_name}\n")
-
-    #labjack 초기화
-
-    handle = None
-
-    try:
-        handle = ljm.openS("T4", "ANY", "ANY")
-        print(" LabJack connected")
-        info = ljm.getHandleInfo(handle)
-        print("Connected:", info)
-
-        names = [
-            "EIO_DIRECTION",
-            "EIO_STATE",
-            "CIO_DIRECTION",
-            "CIO_STATE"
-        ]
-
-        ljm.eWriteNames(
-            handle,
-            len(names),
-            names,
-            [0xFF, 0, 0x0F, 0]
-        )
-
-    except Exception as e:
-        print(" LabJack not found → running without TTL")
-        handle = None
+        f.write(f"Session Type: {SESSION_TYPE}\n")
+        f.write(f"Task Mode: {MODE}\n")
+        f.write(f"Target Refresh Hz: {TARGET_REFRESH_HZ}\n")
+        f.write(f"LabJack Enabled: {USE_LABJACK}\n")
+        f.write(f"LabJack Connected: {handle is not None}\n")
 
     print("LabJack handle:", handle)
     

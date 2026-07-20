@@ -1,7 +1,15 @@
 from psychopy import visual
-from labjack import ljm   
+from config import SHOW_SYNC_MARKER
+
+try:
+    from labjack import ljm
+except Exception:
+    ljm = None
 
 def draw_white_marker(win, pos, size):
+    if not SHOW_SYNC_MARKER:
+        return
+
     # pos, size는 화면의 정규화된 위치와 크기 (1.0 = 전체화면)
     # 프레임에 넣은 수가 표시되는 프레임수 
     #pos 뒤에 윈도우 크기 곱해줘야됨 
@@ -11,7 +19,7 @@ def draw_white_marker(win, pos, size):
 
 def trigger_on_flip(handle, duration=0.005):
 
-    if handle is None:
+    if handle is None or ljm is None:
         return
 
     return {
@@ -29,7 +37,7 @@ def set_trigger(
     action: str = ""
 ):
 
-    if handle is None:
+    if handle is None or ljm is None:
         return
 
 
@@ -45,7 +53,7 @@ def set_trigger(
 
 def reset_trigger(handle: int | None):
 
-    if handle is None:
+    if handle is None or ljm is None:
         return
 
     try:

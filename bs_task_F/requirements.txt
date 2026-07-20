@@ -2,8 +2,7 @@ psychopy==2025.1.0
 numpy==1.25.0
 Pillow==10.1.0
 opencv-python==4.8.1.78
-pygame==2.5.2
 pyglet==1.4.11
 pandas==2.1.1
-labjack-ljm==1.23.0
-pyjosa
+openpyxl==3.1.5
+pyjosa==1.0.3

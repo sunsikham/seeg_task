@@ -11,9 +11,9 @@ from phase_func.test_food import run_food_task
 from phase_func.test_habitat import run_habitat_task
 from save_func.save_results import save_results_to_excel, save_results_to_excel_A
 from initiate import initiate
-from utils.labjack_trigger import trigger_timing_log
+from utils.labjack_trigger import close_labjack, trigger_timing_log
 from sys_func.frame_count import frame_log
-from config import MODE, REFRESH_RATE_TOLERANCE_HZ, STIMULI_DIR, TARGET_REFRESH_HZ
+from config import MODE, REFRESH_RATE_TOLERANCE_HZ, SESSION_TYPE, STIMULI_DIR, TARGET_REFRESH_HZ
 import pandas as pd
 import random
 import os
@@ -33,6 +33,12 @@ def save_diagnostic_logs(save_directory):
             print(f"[Diagnostics] saved: {save_path}")
         except Exception as e:
             print(f"[Diagnostics] failed to save {filename}: {e}")
+
+
+def save_display_metadata(save_directory, actual_refresh_hz):
+    metadata_path = os.path.join(save_directory, "metadata.txt")
+    with open(metadata_path, "a", encoding="utf-8") as f:
+        f.write(f"Actual Refresh Hz: {actual_refresh_hz:.2f}\n")
 
 
 def run_experiment(save_directory, handle):
@@ -58,7 +64,9 @@ def run_experiment(save_directory, handle):
             f"{TARGET_REFRESH_HZ} Hz로 설정한 뒤 다시 실행하세요."
         )
 
+    print(f"[Session] type: {SESSION_TYPE}")
     print(f"[Display] refresh rate: {actual_refresh_hz:.2f} Hz")
+    save_display_metadata(save_directory, actual_refresh_hz)
 
 
      # 질문 한국어로 수정
@@ -208,7 +216,10 @@ def main():
     try:
         run_experiment(save_directory, handle)
     finally:
-        save_diagnostic_logs(save_directory)
+        try:
+            save_diagnostic_logs(save_directory)
+        finally:
+            close_labjack(handle)
 
 
 if __name__ == "__main__":

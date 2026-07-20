@@ -71,12 +71,28 @@ if errorlevel 1 (
     goto :fail
 )
 
+if exist "requirements-labjack.txt" (
+    echo [INFO] Installing optional LabJack support...
+    ".venv\Scripts\python.exe" -m pip install -r "requirements-labjack.txt"
+    if errorlevel 1 (
+        echo [WARNING] Optional LabJack support could not be installed.
+        echo [WARNING] The experiment can still run without TTL triggers.
+    )
+)
+
 echo [INFO] Verifying runtime imports...
-".venv\Scripts\python.exe" -c "import psychopy, pandas, openpyxl; from pyjosa.josa import Josa; from labjack import ljm"
+".venv\Scripts\python.exe" -c "import psychopy, pandas, openpyxl; from pyjosa.josa import Josa"
 if errorlevel 1 (
     echo [ERROR] Runtime import verification failed.
-    echo [ERROR] If the LabJack import failed, install the Windows LJM driver and retry.
     goto :fail
+)
+
+".venv\Scripts\python.exe" -c "from labjack import ljm" >nul 2>&1
+if errorlevel 1 (
+    echo [WARNING] LabJack support is unavailable. TTL triggers will be disabled.
+    echo [WARNING] For TTL use, install the Windows LJM driver and run setup.bat again.
+) else (
+    echo [INFO] LabJack Python support is available.
 )
 
 echo.
