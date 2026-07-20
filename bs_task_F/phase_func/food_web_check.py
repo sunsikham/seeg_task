@@ -4,7 +4,7 @@ import os
 from psychopy import visual, core, event
 from pyjosa.josa import Josa
 from utils.labjack_trigger import send_trigger, reset_trigger,  TRIG_F_CHECK_START, TRIG_F_CHECK_RESPOND
-from config import WAITING,HEIGHT,WIDTH, HANDLE,FRAME_EXAMPLE_fcs,FRAME_EXAMPLE_fcf
+from config import WAITING,HEIGHT,WIDTH, HANDLE,FRAME_EXAMPLE_fcs,FRAME_EXAMPLE_fcf,STIMULI_DIR
 from draw_func.draw_marker import draw_white_marker
 from phase_func.waiting import random_isi_phase
 from sys_func.frame_count import frame_timer
@@ -72,12 +72,12 @@ def run_trial(
     # 이미지 경로
     # =====================================
     predator_image_path = os.path.join(
-        "stimuli",
+        STIMULI_DIR,
         f"{predator}.png"
     )
 
     prey_image_path = os.path.join(
-        "stimuli",
+        STIMULI_DIR,
         f"{prey}.png"
     )
 

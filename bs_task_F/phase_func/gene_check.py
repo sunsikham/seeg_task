@@ -4,7 +4,7 @@ import os
 from psychopy import visual, core, event
 from pyjosa.josa import Josa
 from utils.labjack_trigger import send_trigger, reset_trigger,  TRIG_G_CHECK_START, TRIG_G_CHECK_RESPOND
-from config import WAITING,HEIGHT,WIDTH, HANDLE,FRAME_EXAMPLE_gcs,FRAME_EXAMPLE_gcf
+from config import WAITING,HEIGHT,WIDTH, HANDLE,FRAME_EXAMPLE_gcs,FRAME_EXAMPLE_gcf,STIMULI_DIR
 from draw_func.draw_marker import draw_white_marker
 from phase_func.waiting import random_isi_phase
 from sys_func.frame_count import frame_timer
@@ -72,12 +72,12 @@ def run_gene_trial(
     # 이미지 경로
     # =====================================
     animal_a_image_path = os.path.join(
-        "stimuli",
+        STIMULI_DIR,
         f"{animal_a}.png"
     )
 
     animal_b_image_path = os.path.join(
-        "stimuli",
+        STIMULI_DIR,
         f"{animal_b}.png"
     )
 

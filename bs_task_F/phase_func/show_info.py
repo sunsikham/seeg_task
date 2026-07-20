@@ -3,7 +3,7 @@ import random
 from psychopy import visual, core, event
 from set_opts.visual_opts import UI_CONFIG
 from utils.labjack_trigger import send_trigger, reset_trigger, TRIG_FOOD_SHOW, TRIG_GENE_SHOW, TRIG_FOOD_SHOW_R, TRIG_GENE_SHOW_R, TRIG_HABITAT_SHOW, TRIG_HABITAT_SHOW_R
-from config import FRAME_EXAMPLE_fa,FRAME_EXAMPLE_ga,FRAME_EXAMPLE_fr,FRAME_EXAMPLE_gr,FRAME_EXAMPLE_ha, FRAME_EXAMPLE_hr, WIDTH, HEIGHT
+from config import FRAME_EXAMPLE_fa,FRAME_EXAMPLE_ga,FRAME_EXAMPLE_fr,FRAME_EXAMPLE_gr,FRAME_EXAMPLE_ha, FRAME_EXAMPLE_hr, WIDTH, HEIGHT, STIMULI_DIR
 from draw_func.draw_marker import draw_white_marker
 from sys_func.frame_count import frame_timer
 
@@ -37,7 +37,7 @@ def show_all_food_phase(
    
 
     image_paths = (
-    os.path.join("stimuli", "food", "먹이사슬.png")
+    os.path.join(STIMULI_DIR, "food", "먹이사슬.png")
     )
 
     stim = visual.ImageStim(
@@ -133,7 +133,7 @@ def show_all_gene_phase(
     cfg = UI_CONFIG["image_phase"]["gene_all"]
 
     image_paths = (
-    os.path.join("stimuli", "gene", "유전자.png")
+    os.path.join(STIMULI_DIR, "gene", "유전자.png")
     )
 
     stim = visual.ImageStim(
@@ -219,7 +219,7 @@ def show_all_habitat_phase(
     cfg = UI_CONFIG["image_phase"]["habitat_all"]
 
     image_paths = (
-    os.path.join("stimuli", "habitat", "서식지.png")
+    os.path.join(STIMULI_DIR, "habitat", "서식지.png")
     )
 
     stim = visual.ImageStim(
@@ -310,7 +310,7 @@ def show_random_food_pair(
     target_files = ["1.png", "2.png", "3.png", "4.png", "5.png", "6.png"]
 
     # 2. 파일 이름들을 경로(stimuli/gene/...)로 변환하여 리스트 생성
-    image_paths = [os.path.join("stimuli", "food", filename) for filename in target_files]
+    image_paths = [os.path.join(STIMULI_DIR, "food", filename) for filename in target_files]
 
     selected = random.sample(image_paths, 2)
 
@@ -392,7 +392,7 @@ def show_random_gene_single(
     target_files = ["1.png", "2.png", "3.png"]
 
     # 2. 파일 이름들을 경로(stimuli/gene/...)로 변환하여 리스트 생성
-    image_paths = [os.path.join("stimuli", "gene", filename) for filename in target_files]
+    image_paths = [os.path.join(STIMULI_DIR, "gene", filename) for filename in target_files]
 
     # 3. 생성된 경로들 중에서 랜덤으로 하나 선택
     selected = random.choice(image_paths)
@@ -464,7 +464,7 @@ def show_random_habitat_single(
     target_files = ["1.png", "2.png", "3.png"]
 
     # 2. 파일 이름들을 경로(stimuli/gene/...)로 변환하여 리스트 생성
-    image_paths = [os.path.join("stimuli", "habitat", filename) for filename in target_files]
+    image_paths = [os.path.join(STIMULI_DIR, "habitat", filename) for filename in target_files]
 
     # 3. 생성된 경로들 중에서 랜덤으로 하나 선택
     selected = random.choice(image_paths)

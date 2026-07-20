@@ -3,7 +3,7 @@ import random
 import os
 from collections import deque
 from set_opts.visual_opts import UI_CONFIG
-from config import WAITING,HEIGHT,WIDTH, HANDLE,FRAME_EXAMPLE_bs,FRAME_EXAMPLE_bss,FRAME_EXAMPLE_bf,waiting_frames,MODE
+from config import WAITING,HEIGHT,WIDTH, HANDLE,FRAME_EXAMPLE_bs,FRAME_EXAMPLE_bss,FRAME_EXAMPLE_bf,waiting_frames,MODE,STIMULI_DIR
 from draw_func.draw_marker import draw_white_marker
 from utils.labjack_trigger import send_trigger, reset_trigger, TRIG_B_START, TRIG_B_RESPOND,TRIG_B_WRONGRESPOND,TRIG_B_SELECTSTART
 from phase_func.show_info import show_all_food_phase, show_all_gene_phase, show_all_habitat_phase
@@ -28,14 +28,14 @@ def run_trial(win, trial, handle,index):
     left_option = trial["option1"]
     right_option = trial["option2"]
 
-    left_image_path = os.path.join("stimuli", f"{left_option}.png")
-    right_image_path = os.path.join("stimuli", f"{right_option}.png")
+    left_image_path = os.path.join(STIMULI_DIR, f"{left_option}.png")
+    right_image_path = os.path.join(STIMULI_DIR, f"{right_option}.png")
 
     # =========================
     # premise image 경로 추가
     # =========================
     premise_image_path = os.path.join(
-        "stimuli",
+        STIMULI_DIR,
         f"{trial['premise']}.png"
     )
 

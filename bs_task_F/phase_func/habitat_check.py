@@ -5,7 +5,7 @@ import os
 from psychopy import visual, core, event
 from pyjosa.josa import Josa
 from utils.labjack_trigger import send_trigger, reset_trigger,  TRIG_H_CHECK_START, TRIG_H_CHECK_RESPOND
-from config import WAITING,HEIGHT,WIDTH, HANDLE,FRAME_EXAMPLE_hcs,FRAME_EXAMPLE_hcf
+from config import WAITING,HEIGHT,WIDTH, HANDLE,FRAME_EXAMPLE_hcs,FRAME_EXAMPLE_hcf,STIMULI_DIR
 from draw_func.draw_marker import draw_white_marker
 from phase_func.waiting import random_isi_phase
 from sys_func.frame_count import frame_timer
@@ -145,12 +145,12 @@ def run_habitat_trial(
     # 이미지 경로
     # =========================
     animal1_image_path = os.path.join(
-        "stimuli",
+        STIMULI_DIR,
         f"{animal1}.png"
     )
 
     animal2_image_path = os.path.join(
-        "stimuli",
+        STIMULI_DIR,
         f"{animal2}.png"
     )
 

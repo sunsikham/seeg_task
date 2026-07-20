@@ -13,7 +13,7 @@ from save_func.save_results import save_results_to_excel, save_results_to_excel_
 from initiate import initiate
 from utils.labjack_trigger import trigger_timing_log
 from sys_func.frame_count import frame_log
-from config import MODE, REFRESH_RATE_TOLERANCE_HZ, TARGET_REFRESH_HZ
+from config import MODE, REFRESH_RATE_TOLERANCE_HZ, STIMULI_DIR, TARGET_REFRESH_HZ
 import pandas as pd
 import random
 import os
@@ -75,10 +75,10 @@ def run_experiment(save_directory, handle):
     체크질문을 7개로 줄이기 
     먹이사슬을 물어볼때 리버스, 포워드가 확실히 구분이 되도록 질문을 바꾼다 '''
 
-    json_path = os.path.join("stimuli", "web.json")
-    food_json_path = os.path.join("stimuli", "trial_list2.json")
-    gene_json_path = os.path.join("stimuli", "trial_list1.json")
-    habitat_json_path = os.path.join("stimuli", "trial_list3.json")
+    json_path = os.path.join(STIMULI_DIR, "web.json")
+    food_json_path = os.path.join(STIMULI_DIR, "trial_list2.json")
+    gene_json_path = os.path.join(STIMULI_DIR, "trial_list1.json")
+    habitat_json_path = os.path.join(STIMULI_DIR, "trial_list3.json")
     
    
     if MODE==0:
