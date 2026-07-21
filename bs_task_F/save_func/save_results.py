@@ -38,6 +38,12 @@ def save_results_to_excel(results, save_dir="data", filename="results.xlsx"):
         "response",
         "rt1",
         "rt2",
+        "question_onset_s",
+        "premise_onset_s",
+        "option_left_onset_s",
+        "option_right_onset_s",
+        "choice_onset_s",
+        "response_detected_s",
         "is_correct"
     ]
     ws.append(headers)
@@ -66,6 +72,12 @@ def save_results_to_excel(results, save_dir="data", filename="results.xlsx"):
             r.get("response", ""),
             r.get("rt1", ""),
             r.get("rt2", ""),
+            r.get("question_onset_s", ""),
+            r.get("premise_onset_s", ""),
+            r.get("option_left_onset_s", ""),
+            r.get("option_right_onset_s", ""),
+            r.get("choice_onset_s", ""),
+            r.get("response_detected_s", ""),
             r.get("is_correct", "")
         ])
 

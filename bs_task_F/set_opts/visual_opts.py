@@ -10,7 +10,7 @@ from config import (
 UI_CONFIG = {
     # ===== 텍스트 =====
     "question": {
-        "pos": (0, 250),
+        "pos": (0, 300),
         "height": 60,
         "wrapWidth": 1200,
         "color": "black",
@@ -18,8 +18,8 @@ UI_CONFIG = {
     },
 
     "option": {
-        "left_pos": (-400, 50),
-        "right_pos": (400, 50),
+        "left_pos": (-400, -50),
+        "right_pos": (400, -50),
         "height": 60,
         "color": "black",
         "font": "Malgun Gothic"
@@ -27,9 +27,9 @@ UI_CONFIG = {
 
     # ===== 이미지 =====
     "image": {
-        "left_pos": (-400, -120),
-        "right_pos": (400, -120),
-        "main_pos": (0, 450),
+        "left_pos": (-400, -180),
+        "right_pos": (400, -180),
+        "main_pos": (0, 60),
         "sub_left_pos": (-650, 300),
         "sub_right_pos": (650, 300),
 
@@ -47,8 +47,8 @@ UI_CONFIG = {
 
     # ===== 화살표 =====
     "arrow": {
-        "left_pos": (-400, -320),
-        "right_pos": (400, -320),
+        "left_pos": (-400, -330),
+        "right_pos": (400, -330),
         "height": 120,
         "color": "black",
         "active_color": "yellow"

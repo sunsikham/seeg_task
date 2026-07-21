@@ -48,10 +48,20 @@ TRIG_H_CHECK_RESPOND    = 15
 # main belief trial
 # =========================================
 
-TRIG_B_START          = 20
-TRIG_B_RESPOND        = 21
-TRIG_B_WRONGRESPOND        = 22
-TRIG_B_SELECTSTART          = 23
+TRIG_B_QUESTION_ON       = 20
+TRIG_B_CORRECT_RESPONSE  = 21
+TRIG_B_WRONG_RESPONSE    = 22
+TRIG_B_CHOICE_ON         = 23
+TRIG_B_PREMISE_ON        = 24
+TRIG_B_OPTION_LEFT_ON    = 25
+TRIG_B_OPTION_RIGHT_ON   = 26
+TRIG_B_NO_RESPONSE       = 27
+
+# 이전 이름을 사용하는 코드와의 호환성 유지
+TRIG_B_START = TRIG_B_QUESTION_ON
+TRIG_B_RESPOND = TRIG_B_CORRECT_RESPONSE
+TRIG_B_WRONGRESPOND = TRIG_B_WRONG_RESPONSE
+TRIG_B_SELECTSTART = TRIG_B_CHOICE_ON
 
 
 
@@ -143,7 +153,14 @@ def close_labjack(handle: int | None):
 # 트리거 전송
 # ============================================================================
 
-def send_trigger(handle: int | None, code: int):
+def send_trigger(
+    handle: int | None,
+    code: int,
+    *,
+    trial_index=None,
+    task_type=None,
+    phase=None,
+):
     """EIO 코드를 설정하고 2 ms 뒤 CIO0(latch)를 HIGH로 올립니다.
 
     전송 순서:
@@ -169,6 +186,9 @@ def send_trigger(handle: int | None, code: int):
     error_message = ""
 
     entry = {
+        "trial_index": trial_index,
+        "task_type": task_type,
+        "phase": phase,
         "trigger_sequence": _next_trigger_sequence,
         "trigger_code": int(code),
         "send_started_perf_counter": started_at,
@@ -245,6 +265,9 @@ def reset_trigger(handle: int | None):
 
     if _active_trigger_entry is None:
         trigger_timing_log.append({
+            "trial_index": None,
+            "task_type": None,
+            "phase": "orphan_reset",
             "trigger_sequence": None,
             "trigger_code": None,
             "send_started_perf_counter": None,

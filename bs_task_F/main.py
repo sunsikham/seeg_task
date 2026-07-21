@@ -108,7 +108,6 @@ def run_experiment(save_directory, handle):
         show_all_habitat_phase(win, handle)
 
         run_habitat_task(win,handle)
-        run_habitat_task(win,handle)
 
     elif MODE==1:
        
@@ -123,7 +122,6 @@ def run_experiment(save_directory, handle):
         show_all_habitat_phase(win, handle)
 
         run_habitat_task(win,handle)
-        run_habitat_task(win,handle)
 
     elif MODE==2:
         show_all_food_phase(win, handle)
@@ -135,7 +133,6 @@ def run_experiment(save_directory, handle):
         show_all_food_phase(win, handle)
         show_all_habitat_phase(win, handle)
 
-        run_habitat_task(win,handle)
         run_habitat_task(win,handle)
 
     elif MODE==3:

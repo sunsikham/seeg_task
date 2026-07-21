@@ -3,9 +3,33 @@ import random
 import os
 from collections import deque
 from set_opts.visual_opts import UI_CONFIG
-from config import WAITING,HEIGHT,WIDTH, HANDLE,FRAME_EXAMPLE_bs,FRAME_EXAMPLE_bss,FRAME_EXAMPLE_bf,waiting_frames,MODE,STIMULI_DIR
+from config import (
+    HEIGHT,
+    WIDTH,
+    FRAME_EXAMPLE_bq,
+    FRAME_EXAMPLE_bp,
+    FRAME_EXAMPLE_bl,
+    FRAME_EXAMPLE_br,
+    FRAME_EXAMPLE_bss,
+    FRAME_EXAMPLE_bf,
+    QUESTION_FRAMES,
+    REVEAL_FRAMES,
+    MODE,
+    STIMULI_DIR,
+)
 from draw_func.draw_marker import draw_white_marker
-from utils.labjack_trigger import send_trigger, reset_trigger, TRIG_B_START, TRIG_B_RESPOND,TRIG_B_WRONGRESPOND,TRIG_B_SELECTSTART
+from utils.labjack_trigger import (
+    send_trigger,
+    reset_trigger,
+    TRIG_B_QUESTION_ON,
+    TRIG_B_PREMISE_ON,
+    TRIG_B_OPTION_LEFT_ON,
+    TRIG_B_OPTION_RIGHT_ON,
+    TRIG_B_CHOICE_ON,
+    TRIG_B_CORRECT_RESPONSE,
+    TRIG_B_WRONG_RESPONSE,
+    TRIG_B_NO_RESPONSE,
+)
 from phase_func.show_info import show_all_food_phase, show_all_gene_phase, show_all_habitat_phase
 from phase_func.waiting import random_isi_phase
 from psychopy import visual, core, event
@@ -194,181 +218,251 @@ def run_trial(win, trial, handle,index):
     clock = core.Clock()
     rt2_clock = core.Clock()
 
-    event.clearEvents()
-
     response = None
     rt = None
     rt2 = None
 
-  
+    marker_pos = (-WIDTH//2 + 120, -HEIGHT//2 + 120)
+    marker_size = (50, 50)
 
-    # =========================
-    # premise phase
-    # =========================
-    frame_count = 0
-
-    while frame_count < waiting_frames:
-
-        if frame_count < FRAME_EXAMPLE_bs:
-            draw_white_marker(
-                win,
-                pos=(-WIDTH//2 + 120, -HEIGHT//2 + 120),
-                size=(50, 50)
-            )
-
+    def draw_scene(
+        *,
+        show_premise=False,
+        show_left=False,
+        show_right=False,
+        show_arrows=False,
+    ):
         question.draw()
-        premise_image.draw()
+        if show_premise:
+            premise_image.draw()
+        if show_left:
+            left_option.draw()
+            left_image.draw()
+        if show_right:
+            right_option.draw()
+            right_image.draw()
+        if show_arrows:
+            left_arrow.draw()
+            right_arrow.draw()
 
-        if frame_count == 0:
-            win.callOnFlip(
-                send_trigger,
-                handle,
-                TRIG_B_START
+    def run_timed_phase(
+        *,
+        phase,
+        duration_frames,
+        trigger_code,
+        marker_frames,
+        reset_trial_clock=False,
+        **scene_flags,
+    ):
+        onset_flip_time = None
+
+        for frame_count in range(duration_frames):
+            draw_scene(**scene_flags)
+
+            if frame_count < marker_frames:
+                draw_white_marker(
+                    win,
+                    pos=marker_pos,
+                    size=marker_size,
+                )
+
+            if frame_count == 0:
+                if reset_trial_clock:
+                    win.callOnFlip(clock.reset)
+                win.callOnFlip(
+                    send_trigger,
+                    handle,
+                    trigger_code,
+                    trial_index=index,
+                    task_type=trial["task_type"],
+                    phase=phase,
+                )
+            elif frame_count == 1:
+                win.callOnFlip(reset_trigger, handle)
+
+            flip_time = win.flip()
+            if onset_flip_time is None:
+                onset_flip_time = flip_time
+
+            frame_timer(
+                flip_time=flip_time,
+                trial_index=index,
+                task_type=trial["task_type"],
+                phase=phase,
             )
-        elif frame_count == 1:
-            win.callOnFlip(
-                reset_trigger,
-                handle
-            )
 
-        flip_time = win.flip()
-        frame_timer(
-            flip_time=flip_time,
-            trial_index=index,
-            task_type=trial["task_type"],
-            phase="premise_onset"
-        )
+        return onset_flip_time
 
-        event.clearEvents()
-        frame_count += 1
+    event.clearEvents()
 
-    # =========================
-    # option / response phase
-    # =========================
-    frame_count = 0
+    question_onset = run_timed_phase(
+        phase="question_onset",
+        duration_frames=QUESTION_FRAMES,
+        trigger_code=TRIG_B_QUESTION_ON,
+        marker_frames=FRAME_EXAMPLE_bq,
+        reset_trial_clock=True,
+    )
+    premise_onset = run_timed_phase(
+        phase="premise_onset",
+        duration_frames=REVEAL_FRAMES,
+        trigger_code=TRIG_B_PREMISE_ON,
+        marker_frames=FRAME_EXAMPLE_bp,
+        show_premise=True,
+    )
+    option_left_onset = run_timed_phase(
+        phase="option_left_onset",
+        duration_frames=REVEAL_FRAMES,
+        trigger_code=TRIG_B_OPTION_LEFT_ON,
+        marker_frames=FRAME_EXAMPLE_bl,
+        show_premise=True,
+        show_left=True,
+    )
+    option_right_onset = run_timed_phase(
+        phase="option_right_onset",
+        duration_frames=REVEAL_FRAMES,
+        trigger_code=TRIG_B_OPTION_RIGHT_ON,
+        marker_frames=FRAME_EXAMPLE_br,
+        show_premise=True,
+        show_left=True,
+        show_right=True,
+    )
+
+    # 선택 전 입력은 버리고 CHOICE_ON reset 이후부터 응답을 허용한다.
+    event.clearEvents()
+    choice_onset = None
     timeout_frames = cfg["timing"]["timeout_frames"]
 
-    while frame_count < timeout_frames:
+    for frame_count in range(timeout_frames):
+        draw_scene(
+            show_premise=True,
+            show_left=True,
+            show_right=True,
+            show_arrows=True,
+        )
 
         if frame_count < FRAME_EXAMPLE_bss:
             draw_white_marker(
                 win,
-                pos=(-WIDTH//2 + 120, -HEIGHT//2 + 120),
-                size=(50, 50)
+                pos=marker_pos,
+                size=marker_size,
             )
-
-        question.draw()
-        premise_image.draw()
-        left_option.draw()
-        right_option.draw()
-        left_image.draw()
-        right_image.draw()
-        left_arrow.draw()
-        right_arrow.draw()
 
         if frame_count == 0:
             win.callOnFlip(rt2_clock.reset)
             win.callOnFlip(
                 send_trigger,
                 handle,
-                TRIG_B_SELECTSTART
+                TRIG_B_CHOICE_ON,
+                trial_index=index,
+                task_type=trial["task_type"],
+                phase="choice_onset",
             )
         elif frame_count == 1:
-            win.callOnFlip(
-                reset_trigger,
-                handle
-            )
+            win.callOnFlip(reset_trigger, handle)
 
         flip_time = win.flip()
+        if choice_onset is None:
+            choice_onset = flip_time
+
         frame_timer(
             flip_time=flip_time,
             trial_index=index,
             task_type=trial["task_type"],
-            phase="option_onset"
+            phase="choice_onset",
         )
+
+        if frame_count == 0:
+            event.clearEvents()
+            continue
 
         keys = event.getKeys(
             keyList=["left", "right", "escape"],
-            timeStamped=clock
+            timeStamped=clock,
         )
 
-        if keys:
-            key, rt = keys[0]
-            rt2 = rt2_clock.getTime()
+        if not keys:
+            continue
 
-            if key == "escape":
-                core.quit()
+        key, rt = keys[0]
+        rt2 = rt2_clock.getTime()
 
-            if key == "left":
-                left_arrow.color = cfg["arrow"]["active_color"]
-                response = "left"
-            else:
-                right_arrow.color = cfg["arrow"]["active_color"]
-                response = "right"
+        if key == "escape":
+            core.quit()
 
-            break
+        if key == "left":
+            left_arrow.color = cfg["arrow"]["active_color"]
+            response = "left"
+        else:
+            right_arrow.color = cfg["arrow"]["active_color"]
+            response = "right"
 
-        frame_count += 1
+        response_trigger = (
+            TRIG_B_CORRECT_RESPONSE
+            if response == trial["correct"]
+            else TRIG_B_WRONG_RESPONSE
+        )
+        send_trigger(
+            handle,
+            response_trigger,
+            trial_index=index,
+            task_type=trial["task_type"],
+            phase="response",
+        )
+        break
 
-    # =========================
-    # feedback phase (response trigger 포함, 총 0.5초)
-    # =========================
-    frame_count = 0
+    if response is None:
+        send_trigger(
+            handle,
+            TRIG_B_NO_RESPONSE,
+            trial_index=index,
+            task_type=trial["task_type"],
+            phase="no_response",
+        )
+
+    # 응답/무응답 트리거를 유지한 뒤 다음 feedback 프레임에서 reset한다.
     feedback_frames = cfg["timing"]["feedback_frames"]
-
-    while frame_count < feedback_frames:
+    for frame_count in range(feedback_frames):
+        draw_scene(
+            show_premise=True,
+            show_left=True,
+            show_right=True,
+            show_arrows=True,
+        )
 
         if frame_count < FRAME_EXAMPLE_bf:
             draw_white_marker(
                 win,
-                pos=(-WIDTH//2 + 120, -HEIGHT//2 + 120),
-                size=(50, 50)
+                pos=marker_pos,
+                size=marker_size,
             )
 
-        question.draw()
-        premise_image.draw()
-        left_option.draw()
-        right_option.draw()
-        left_image.draw()
-        right_image.draw()
-        left_arrow.draw()
-        right_arrow.draw()
-
-        if frame_count == 0 and trial['correct'] == response:
-            win.callOnFlip(
-                send_trigger,
-                handle,
-                TRIG_B_RESPOND
-            )
-        elif frame_count == 0:
-            win.callOnFlip(
-                send_trigger,
-                handle,
-                TRIG_B_WRONGRESPOND
-            )
-        elif frame_count == 1:
-            win.callOnFlip(
-                reset_trigger,
-                handle
-            )
+        if frame_count == 1:
+            win.callOnFlip(reset_trigger, handle)
 
         flip_time = win.flip()
         frame_timer(
             flip_time=flip_time,
             trial_index=index,
             task_type=trial["task_type"],
-            phase="response"
+            phase="feedback",
         )
 
-        frame_count += 1
+    def relative_to_question(flip_time):
+        return round(flip_time - question_onset, 6)
 
-    # =========================
-    # 색 복구
-    # =========================
+    onset_times = {
+        "question_onset_s": 0.0,
+        "premise_onset_s": relative_to_question(premise_onset),
+        "option_left_onset_s": relative_to_question(option_left_onset),
+        "option_right_onset_s": relative_to_question(option_right_onset),
+        "choice_onset_s": relative_to_question(choice_onset),
+        "response_detected_s": round(rt, 6) if rt is not None else None,
+    }
+
     left_arrow.color = cfg["arrow"]["color"]
     right_arrow.color = cfg["arrow"]["color"]
 
-    return response, rt, rt2
+    return response, rt, rt2, onset_times
 
 
 # =========================
@@ -382,12 +476,9 @@ def run_both_task(win, food_json_path, gene_json_path, habitat_json_path, handle
     results = []
 
     # 2. enumerate를 사용하여 인덱스(i)와 트라이얼(t)을 동시에 순회
-    for i, t in enumerate(trials):
-
-        random_isi_phase(win)
-
+    for i, t in enumerate(trials, start=1):
         # 3. 정보 제공 화면 로직 수정 (처음 시작할 때[0]와 15문제마다 반복)
-        if i % 10 == 0:
+        if (i - 1) % 10 == 0:
 
             if MODE==0:
                 show_all_food_phase(win, handle)
@@ -409,10 +500,12 @@ def run_both_task(win, food_json_path, gene_json_path, habitat_json_path, handle
                 show_all_food_phase(win, handle)
                 show_all_gene_phase(win, handle)
                 #show_all_habitat_phase(win, handle)
-           
+
+        # 정보 화면이 있는 trial도 질문 직전에 동일한 ISI를 둔다.
+        random_isi_phase(win)
 
         # 4. 트라이얼 실행
-        response, rt, rt2 = run_trial(win, t, handle,i)
+        response, rt, rt2, onset_times = run_trial(win, t, handle, i)
 
         # 5. 정답 확인 및 결과 저장
         is_correct = (response == t["correct"]) if response else False
@@ -422,7 +515,8 @@ def run_both_task(win, food_json_path, gene_json_path, habitat_json_path, handle
             "response": response,
             "rt1": rt,
             "rt2":rt2,
-            "is_correct": is_correct
+            "is_correct": is_correct,
+            **onset_times,
         })
 
     return results
