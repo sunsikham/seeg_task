@@ -4,6 +4,52 @@ PsychoPy로 구현된 동물 지식 구조 과제와 SEEG 기록을 관리하는
 과제는 먹이사슬(food), 유전자 관계(gene), 서식지(habitat) 정보를 학습한 뒤
 두 선택지 중 정답을 고르는 방식으로 구성되어 있습니다.
 
+## 새 Windows 컴퓨터에서 빠른 시작
+
+### 1. 준비
+
+- Git 설치
+- Python 3.10 설치
+- SEEG 모드에서는 LabJack LJM Windows 드라이버 설치
+
+### 2. 코드 받기
+
+```powershell
+git clone <repository-url>
+cd seeg_task\bs_task_F
+```
+
+### 3. 실험 설정
+
+`config.py`에서 세션 종류와 실험 MODE를 선택합니다.
+
+```python
+SESSION_TYPE = "BEHAVIORAL"  # 60 Hz, LabJack 사용 안 함
+SESSION_TYPE = "SEEG"        # 144 Hz, LabJack 사용
+
+MODE = 0  # food + gene + habitat
+MODE = 1  # gene + habitat
+MODE = 2  # food + habitat
+MODE = 3  # food + gene
+```
+
+권장 화면 해상도는 1920×1080입니다.
+
+### 4. 최초 설치
+
+```powershell
+setup.bat
+```
+
+### 5. 실험 실행
+
+```powershell
+run.bat
+```
+
+콘솔의 `Enter subject ID:`에 고유한 참가자 ID를 입력합니다. 결과는
+`bs_task_F\Data\<subject_id>\`에 저장됩니다.
+
 ## 프로젝트 구조
 
 ```text
@@ -135,8 +181,7 @@ Enter를 눌러야 계속 진행됩니다.
 - 권장 화면 해상도 1920×1080
 
 LabJack 연결에 실패하면 TTL 트리거 없이 실험이 계속 실행되도록 작성되어
-있습니다. 실제 SEEG 실험 전에는 콘솔에서 LabJack 연결 성공 여부를 반드시
-확인해야 합니다. 현재 코드는 주사율을 자동 검사하지만 화면 해상도는 자동으로
+있습니다. 현재 코드는 주사율을 자동 검사하지만 화면 해상도는 자동으로
 검사하지 않으므로 Windows 디스플레이 설정에서 직접 확인합니다.
 
 ## 설치
