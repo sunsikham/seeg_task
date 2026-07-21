@@ -8,11 +8,21 @@ import os
 from openpyxl import Workbook
 import os
 
+def _save_workbook_atomic(wb, file_path):
+    temp_file_path = f"{file_path}.tmp"
+
+    try:
+        wb.save(temp_file_path)
+        os.replace(temp_file_path, file_path)
+    finally:
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
+
+
 def save_results_to_excel(results, save_dir="data", filename="results.xlsx"):
 
     os.makedirs(save_dir, exist_ok=True)
     file_path = os.path.join(save_dir, filename)
-    temp_file_path = f"{file_path}.tmp"
 
     wb = Workbook()
     ws = wb.active
@@ -86,12 +96,51 @@ def save_results_to_excel(results, save_dir="data", filename="results.xlsx"):
             r.get("is_correct", "")
         ])
 
-    try:
-        wb.save(temp_file_path)
-        os.replace(temp_file_path, file_path)
-    finally:
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+    _save_workbook_atomic(wb, file_path)
+
+    return file_path
+
+
+def save_check_results_to_excel(
+    results,
+    task_type,
+    save_dir="data",
+    filename="check_results.xlsx",
+):
+    os.makedirs(save_dir, exist_ok=True)
+    file_path = os.path.join(save_dir, filename)
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "check_results"
+
+    headers = [
+        "attempt_index",
+        "task_type",
+        "phase",
+        "animal",
+        "slot_idx",
+        "slot_label",
+        "correct",
+        "rt_sec",
+        "rt_frames",
+    ]
+    ws.append(headers)
+
+    for attempt_index, result in enumerate(results, start=1):
+        ws.append([
+            attempt_index,
+            task_type,
+            result.get("phase", ""),
+            result.get("animal", ""),
+            result.get("slot_idx", ""),
+            result.get("slot_label", ""),
+            result.get("correct", ""),
+            result.get("rt_sec", ""),
+            result.get("rt_frames", ""),
+        ])
+
+    _save_workbook_atomic(wb, file_path)
 
     return file_path
 

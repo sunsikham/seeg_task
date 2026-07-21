@@ -9,7 +9,11 @@ from phase_func.show_info import show_all_food_phase,  show_all_gene_phase, show
 from phase_func.test_gene import run_gene_task
 from phase_func.test_food import run_food_task
 from phase_func.test_habitat import run_habitat_task
-from save_func.save_results import save_results_to_excel, save_results_to_excel_A
+from save_func.save_results import (
+    save_check_results_to_excel,
+    save_results_to_excel,
+    save_results_to_excel_A,
+)
 from initiate import initiate
 from utils.labjack_trigger import close_labjack, trigger_timing_log
 from sys_func.frame_count import frame_log
@@ -94,57 +98,111 @@ def run_experiment(save_directory, handle):
         show_all_gene_phase(win, handle)
         show_all_habitat_phase(win, handle)
 
-        run_food_task(win,handle)
+        food_check_results = run_food_task(win,handle)
+        save_check_results_to_excel(
+            food_check_results,
+            "food",
+            save_directory,
+            "results_food_check.xlsx",
+        )
 
         show_all_food_phase(win, handle)
         show_all_gene_phase(win, handle)
         show_all_habitat_phase(win, handle)
 
-        run_gene_task(win,handle)
+        gene_check_results = run_gene_task(win,handle)
+        save_check_results_to_excel(
+            gene_check_results,
+            "gene",
+            save_directory,
+            "results_gene_check.xlsx",
+        )
 
 
         show_all_food_phase(win, handle)
         show_all_gene_phase(win, handle)
         show_all_habitat_phase(win, handle)
 
-        run_habitat_task(win,handle)
+        habitat_check_results = run_habitat_task(win,handle)
+        save_check_results_to_excel(
+            habitat_check_results,
+            "habitat",
+            save_directory,
+            "results_habitat_check.xlsx",
+        )
 
     elif MODE==1:
        
         show_all_gene_phase(win, handle)
         show_all_habitat_phase(win, handle)
 
-        run_gene_task(win,handle)
+        gene_check_results = run_gene_task(win,handle)
+        save_check_results_to_excel(
+            gene_check_results,
+            "gene",
+            save_directory,
+            "results_gene_check.xlsx",
+        )
 
 
         
         show_all_gene_phase(win, handle)
         show_all_habitat_phase(win, handle)
 
-        run_habitat_task(win,handle)
+        habitat_check_results = run_habitat_task(win,handle)
+        save_check_results_to_excel(
+            habitat_check_results,
+            "habitat",
+            save_directory,
+            "results_habitat_check.xlsx",
+        )
 
     elif MODE==2:
         show_all_food_phase(win, handle)
         show_all_habitat_phase(win, handle)
 
-        run_food_task(win,handle)
+        food_check_results = run_food_task(win,handle)
+        save_check_results_to_excel(
+            food_check_results,
+            "food",
+            save_directory,
+            "results_food_check.xlsx",
+        )
 
 
         show_all_food_phase(win, handle)
         show_all_habitat_phase(win, handle)
 
-        run_habitat_task(win,handle)
+        habitat_check_results = run_habitat_task(win,handle)
+        save_check_results_to_excel(
+            habitat_check_results,
+            "habitat",
+            save_directory,
+            "results_habitat_check.xlsx",
+        )
 
     elif MODE==3:
         show_all_food_phase(win, handle)
         show_all_gene_phase(win, handle)
 
-        run_food_task(win,handle)
+        food_check_results = run_food_task(win,handle)
+        save_check_results_to_excel(
+            food_check_results,
+            "food",
+            save_directory,
+            "results_food_check.xlsx",
+        )
 
         show_all_food_phase(win, handle)
         show_all_gene_phase(win, handle)
 
-        run_gene_task(win,handle)
+        gene_check_results = run_gene_task(win,handle)
+        save_check_results_to_excel(
+            gene_check_results,
+            "gene",
+            save_directory,
+            "results_gene_check.xlsx",
+        )
 
     
        
