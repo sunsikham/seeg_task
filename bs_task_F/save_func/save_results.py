@@ -12,6 +12,7 @@ def save_results_to_excel(results, save_dir="data", filename="results.xlsx"):
 
     os.makedirs(save_dir, exist_ok=True)
     file_path = os.path.join(save_dir, filename)
+    temp_file_path = f"{file_path}.tmp"
 
     wb = Workbook()
     ws = wb.active
@@ -25,7 +26,9 @@ def save_results_to_excel(results, save_dir="data", filename="results.xlsx"):
         "trial_id",       # JSON에 적어둔 문제 번호
         "domain",         # 화면 출력용 대분류 (food, gene, habitat)
         "task_type",      # 세부 유형 (Food, Tree, Conflict, Habitat, Tree-conflict 등)
-        
+        "question_target",
+        "question_text",
+
         "premise",
         "option1",
         "option2",
@@ -59,7 +62,9 @@ def save_results_to_excel(results, save_dir="data", filename="results.xlsx"):
             r.get("trial_id", ""),
             r.get("domain", ""),
             r.get("task_type", ""),
-            
+            r.get("question_target", ""),
+            r.get("question_text", ""),
+
             r.get("premise", ""),
             r.get("option1", ""),
             r.get("option2", ""),
@@ -81,7 +86,12 @@ def save_results_to_excel(results, save_dir="data", filename="results.xlsx"):
             r.get("is_correct", "")
         ])
 
-    wb.save(file_path)
+    try:
+        wb.save(temp_file_path)
+        os.replace(temp_file_path, file_path)
+    finally:
+        if os.path.exists(temp_file_path):
+            os.remove(temp_file_path)
 
     return file_path
 

@@ -192,14 +192,17 @@ def run_experiment(save_directory, handle):
 
 
     results = run_both_task(
-        win=win, 
-        food_json_path=food_json_path, 
-        gene_json_path=gene_json_path, 
-        habitat_json_path=habitat_json_path, 
-        handle=handle
+        win=win,
+        food_json_path=food_json_path,
+        gene_json_path=gene_json_path,
+        habitat_json_path=habitat_json_path,
+        handle=handle,
+        on_trial_complete=lambda completed_results: save_results_to_excel(
+            completed_results,
+            save_directory,
+            "results_t.xlsx",
+        ),
     )
-    
-    save_results_to_excel(results,save_directory, "results_t.xlsx")
 
     print(results)
 

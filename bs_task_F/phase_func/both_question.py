@@ -450,7 +450,9 @@ def run_trial(win, trial, handle,index):
     def relative_to_question(flip_time):
         return round(flip_time - question_onset, 6)
 
-    onset_times = {
+    trial_metadata = {
+        "question_target": target,
+        "question_text": question_text,
         "question_onset_s": 0.0,
         "premise_onset_s": relative_to_question(premise_onset),
         "option_left_onset_s": relative_to_question(option_left_onset),
@@ -462,13 +464,20 @@ def run_trial(win, trial, handle,index):
     left_arrow.color = cfg["arrow"]["color"]
     right_arrow.color = cfg["arrow"]["color"]
 
-    return response, rt, rt2, onset_times
+    return response, rt, rt2, trial_metadata
 
 
 # =========================
 # 6. 전체 실행
 # =========================
-def run_both_task(win, food_json_path, gene_json_path, habitat_json_path, handle):
+def run_both_task(
+    win,
+    food_json_path,
+    gene_json_path,
+    habitat_json_path,
+    handle,
+    on_trial_complete=None,
+):
     
     # 1. 3개의 JSON 파일 경로를 넣어 전체 180개의 트라이얼(15블록) 생성
     trials = generate_trials(food_json_path, gene_json_path, habitat_json_path)
@@ -505,7 +514,7 @@ def run_both_task(win, food_json_path, gene_json_path, habitat_json_path, handle
         random_isi_phase(win)
 
         # 4. 트라이얼 실행
-        response, rt, rt2, onset_times = run_trial(win, t, handle, i)
+        response, rt, rt2, trial_metadata = run_trial(win, t, handle, i)
 
         # 5. 정답 확인 및 결과 저장
         is_correct = (response == t["correct"]) if response else False
@@ -516,8 +525,11 @@ def run_both_task(win, food_json_path, gene_json_path, habitat_json_path, handle
             "rt1": rt,
             "rt2":rt2,
             "is_correct": is_correct,
-            **onset_times,
+            **trial_metadata,
         })
+
+        if on_trial_complete is not None:
+            on_trial_complete(results)
 
     return results
 
