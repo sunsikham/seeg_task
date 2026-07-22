@@ -10,6 +10,25 @@ WAITING=0
 
 SESSION_TYPE = "BEHAVIORAL"  # "BEHAVIORAL" or "SEEG"
 
+# Neon Companion recording is started/stopped manually by the experimenter.
+USE_NEON = True
+NEON_DISCOVERY_TIMEOUT_S = 10.0
+NEON_RETRY_INTERVAL_S = 1.0
+NEON_SHUTDOWN_FLUSH_TIMEOUT_S = 5.0
+
+# Positions use PsychoPy's ``height`` units. The bottom-left corner remains
+# empty for the existing SEEG optical marker.
+NEON_APRILTAG_SIZE = 0.10
+NEON_APRILTAG_POSITIONS = (
+    (-0.72, 0.44),
+    (0.00, 0.44),
+    (0.72, 0.44),
+    (-0.83, 0.00),
+    (0.83, 0.00),
+    (0.00, -0.44),
+    (0.72, -0.44),
+)
+
 SESSION_PROFILES = {
     "BEHAVIORAL": {
         "target_refresh_hz": 60,

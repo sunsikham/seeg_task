@@ -3,7 +3,7 @@ import os
 import sys
 import platform
 from datetime import datetime
-from config import MODE, SESSION_TYPE, TARGET_REFRESH_HZ, USE_LABJACK
+from config import MODE, SESSION_TYPE, TARGET_REFRESH_HZ, USE_LABJACK, USE_NEON
 from utils.labjack_trigger import init_labjack
 
 
@@ -14,7 +14,12 @@ def define_save(base_dir, subject_id):
     subject_id : 실험 참여자 ID (예: 'subject01')
     """
     save_dir = os.path.join(base_dir, 'Data', subject_id)
-    os.makedirs(save_dir, exist_ok=True)
+    if os.path.exists(save_dir):
+        raise FileExistsError(
+            f"Participant ID already exists: {subject_id}. "
+            "Enter a new ID to protect existing data."
+        )
+    os.makedirs(save_dir)
     return save_dir
 
 def initiate():
@@ -52,6 +57,8 @@ def initiate():
         username = "OTHER"
         subject_id = "UNKNOWN"
 
+    session_id = datetime.now().strftime("%Y%m%dT%H%M%S")
+
     # 데이터 저장 경로 생성
     save_directory = define_save(current_folder, subject_id)
     print(f"Data will be saved to: {save_directory}")
@@ -67,6 +74,7 @@ def initiate():
     metadata_path = os.path.join(save_directory, 'metadata.txt')
     with open(metadata_path, 'w', encoding='utf-8') as f:
         f.write(f"Subject ID: {subject_id}\n")
+        f.write(f"Session ID: {session_id}\n")
         f.write(f"Date: {datetime.now()}\n")
         f.write(f"OS: {os_name}\n")
         f.write(f"Session Type: {SESSION_TYPE}\n")
@@ -74,6 +82,7 @@ def initiate():
         f.write(f"Target Refresh Hz: {TARGET_REFRESH_HZ}\n")
         f.write(f"LabJack Enabled: {USE_LABJACK}\n")
         f.write(f"LabJack Connected: {handle is not None}\n")
+        f.write(f"Neon Enabled: {USE_NEON}\n")
 
     print("LabJack handle:", handle)
     
@@ -82,4 +91,4 @@ def initiate():
 
     print("Initialization complete.")
 
-    return save_directory,handle
+    return save_directory, handle, subject_id, session_id

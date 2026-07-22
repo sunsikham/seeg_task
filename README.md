@@ -10,6 +10,7 @@ PsychoPy로 구현된 동물 지식 구조 과제와 SEEG 기록을 관리하는
 
 - Git 설치
 - Python 3.10 설치
+- Pupil Labs Neon과 Neon Companion이 설치된 휴대폰(시선 수집 시)
 - SEEG 모드에서는 LabJack LJM Windows 드라이버 설치
 
 ### 2. 코드 받기
@@ -47,7 +48,9 @@ setup.bat
 run.bat
 ```
 
-콘솔의 `Enter subject ID:`에 고유한 참가자 ID를 입력합니다. 결과는
+Neon을 사용할 때는 PC와 Companion 휴대폰을 같은 네트워크에 연결하고,
+Companion에서 녹화를 먼저 시작한 뒤 `run.bat`을 실행합니다. 콘솔의
+`Enter subject ID:`에 고유한 참가자 ID를 입력합니다. 결과는
 `bs_task_F\Data\<subject_id>\`에 저장됩니다.
 
 ## 프로젝트 구조
@@ -60,7 +63,7 @@ seeg_task/
 │   ├── initiate.py             # 참가자 정보, 저장 폴더, LabJack 초기화
 │   ├── phase_func/             # 학습·확인·본 과제 화면
 │   ├── stimuli/                # 이미지와 trial JSON
-│   ├── utils/                  # LabJack TTL 트리거
+│   ├── utils/                  # LabJack TTL 및 Neon 이벤트 전송
 │   ├── save_func/              # 행동 결과 저장
 │   ├── sys_func/               # trial 생성과 프레임 로그
 │   └── Data/                   # 참가자별 행동 데이터
@@ -92,7 +95,9 @@ seeg_task/
 현재 `main.py`와 `MODE=0` 설정을 기준으로 한 실행 순서는 다음과 같습니다.
 
 ```text
-참가자 ID 입력 및 LabJack 연결
+Companion 녹화 수동 시작
+        ↓
+참가자 ID 입력, Neon 연결 확인 및 LabJack 연결
         ↓
 food·gene·habitat 전체 구조 제시
         ↓
@@ -110,7 +115,9 @@ habitat 배치 확인 과제
         ↓
 본 과제 120문항
         ↓
-행동 결과와 진단 로그 저장
+행동 결과와 진단 로그 저장·Neon 이벤트 flush
+        ↓
+프로그램 종료 후 Companion 녹화 수동 중지
 ```
 
 각 MODE에 포함된 food, gene, habitat 확인 과제는 종류별로 한 번씩
@@ -208,8 +215,9 @@ run.bat
 
 실행 직후 콘솔에 `Enter subject ID:`가 나타납니다. 참가자 ID를 입력하고
 Enter를 누르면 전체화면 실험이 시작되고 결과는
-`bs_task_F/Data/<subject_id>/`에 저장됩니다. 같은 ID로 다시 실행하면 기존
-결과 파일을 덮어쓸 수 있으므로 실행마다 고유한 ID를 사용합니다.
+`bs_task_F/Data/<subject_id>/`에 저장됩니다. 같은 참가자 ID의 폴더가 이미
+있으면 기존 자료 보호를 위해 새 폴더나 파일을 만들지 않고 즉시 중단합니다.
+실행마다 고유한 ID를 사용합니다.
 
 ## 실험 모드
 
@@ -230,14 +238,52 @@ MODE는 참가자 메타데이터에 저장됩니다. MODE 0·1·2·3 모두 포
 
 `bs_task_F/config.py`의 `SESSION_TYPE`으로 녹화 환경을 선택합니다.
 
-| SESSION_TYPE | 주사율 | LabJack TTL | 동기화 마커 |
-|---|---:|---|---|
-| `BEHAVIORAL` | 60 Hz | 비활성 | 숨김 |
-| `SEEG` | 144 Hz | 활성 | 표시 |
+| SESSION_TYPE | 주사율 | LabJack TTL | SEEG 흰색 마커 | Neon AprilTag |
+|---|---:|---|---|---|
+| `BEHAVIORAL` | 60 Hz | 비활성 | 숨김 | `USE_NEON=True`이면 표시 |
+| `SEEG` | 144 Hz | 활성 | 표시 | `USE_NEON=True`이면 표시 |
 
 기본값은 `BEHAVIORAL`입니다. 각 모드의 주사율과 실제 모니터 주사율이
 ±1 Hz 범위에서 일치해야 실험이 시작됩니다. 선택한 세션 모드, 목표·실제
 주사율, LabJack 활성·연결 여부는 `metadata.txt`에 저장됩니다.
+
+## Neon 시선 수집
+
+`bs_task_F/config.py`의 기본값은 `USE_NEON = True`입니다. 이 설정은
+`BEHAVIORAL`과 `SEEG` 모두에서 Neon 이벤트와 화면 가장자리의 AprilTag 7개를
+활성화합니다. 왼쪽 아래는 SEEG 흰색 광학 마커와 겹치지 않도록 비워 둡니다.
+장비 없이 행동 과제만 점검할 때는 `USE_NEON = False`로 바꾸면 Neon 패키지,
+휴대폰 연결 및 AprilTag 없이 기존 실행 경로를 사용합니다.
+
+Neon 수집 순서는 다음과 같습니다.
+
+1. PC와 Companion 휴대폰을 같은 네트워크에 연결합니다.
+2. 휴대폰 Companion에서 참가자 녹화를 수동으로 시작합니다.
+3. `run.bat`을 실행하고 고유한 참가자 ID를 입력합니다.
+4. 프로그램이 완전히 종료되고 진단 로그 저장 메시지가 나온 뒤 녹화를
+   수동으로 중지합니다.
+
+`USE_NEON=True`인데 10초 안에 장치를 찾지 못하거나, 장치가 여러 대
+발견되거나, 활성 녹화가 없으면 첫 자극 전에 중단합니다. 실험 도중 연결이
+끊기면 자극은 계속 진행하며 이벤트의 원래 타임스탬프를 큐에 보관합니다.
+재연결 후 같은 recording ID인지 확인하여 순서대로 재전송하고, 종료 시에는
+화면을 먼저 닫은 뒤 최대 5초 동안 남은 이벤트 전송을 시도합니다.
+
+Cloud section용 이벤트는 다음 구조로 기록됩니다.
+
+```text
+SESSION_START_<ID>_<DATETIME>
+EXPERIMENT_START / EXPERIMENT_END / EXPERIMENT_ABORT
+<DOMAIN>_INFO_SECTION_START / END + <DOMAIN>_INFO_O###
+<DOMAIN>_CHECK_SECTION_START / END + attempt별 RESPONSE_VIEW·RESPONSE·FEEDBACK
+MAIN_SECTION_START / END + MAIN_T###_QUESTION·PREMISE·OPTION_LEFT·OPTION_RIGHT·CHOICE
+MAIN_T###_RESPONSE_LEFT|RIGHT_CORRECT|WRONG 또는 MAIN_T###_NO_RESPONSE
+```
+
+학습 정보 화면은 이미지가 처음 보이는 flip부터 Enter 입력까지, 확인 과제는
+각 응답 시도와 피드백을 각각 별도 section으로 기록합니다. 본 과제는 문항마다
+질문·기준 동물·왼쪽 후보·오른쪽 후보·선택의 5개 section을 만듭니다. 본 과제의
+0.5초 피드백과 ISI는 녹화에는 포함되지만 section에는 포함하지 않습니다.
 
 ## 주요 출력 파일
 
@@ -250,6 +296,14 @@ MODE는 참가자 메타데이터에 저장됩니다. MODE 0·1·2·3 모두 포
 - `results_t.xlsx`: trial 정보, 실제 질문, 반응시간, onset 시각, 정오답
 - `frame_log.xlsx`: PsychoPy 화면 flip 시각과 프레임 간격
 - `trigger_timing_log.xlsx`: 트리거 코드, trial·phase, 전송·reset 시각과 성공 여부
+- `neon_event_log.xlsx`: Neon 이벤트 순서, 세션·녹화 ID, PC/Companion 시각,
+  재전송 횟수와 성공·오류 상태
+
+`metadata.txt`와 모든 행동 결과 Excel에는 `session_id`와
+`neon_recording_id`가 기록되어 Companion/Cloud 녹화와 로컬 결과를 연결할 수
+있습니다. Neon 로그는 이벤트마다 `send_attempt=0`, `send_error=Queued`인 최초
+큐 기록을 남긴 뒤 실제 전송 시도별 행을 추가합니다. Cloud 수신 여부를 점검할
+때는 같은 `event_sequence`에서 `send_success=True`인 행이 있는지 확인합니다.
 
 `results_t.xlsx`의 주요 추가 열은 다음과 같습니다.
 

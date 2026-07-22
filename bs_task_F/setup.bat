@@ -81,7 +81,7 @@ if exist "requirements-labjack.txt" (
 )
 
 echo [INFO] Verifying runtime imports...
-".venv\Scripts\python.exe" -c "import psychopy, pandas, openpyxl; from pyjosa.josa import Josa"
+".venv\Scripts\python.exe" -c "import psychopy, pandas, openpyxl, psychopy_eyetracker_pupil_labs; from pupil_labs.realtime_api.simple import discover_devices; from pyjosa.josa import Josa"
 if errorlevel 1 (
     echo [ERROR] Runtime import verification failed.
     goto :fail

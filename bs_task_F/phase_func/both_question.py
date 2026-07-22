@@ -39,6 +39,7 @@ from stimuli.category import DISEASE_POOL
 from sys_func.collect_option import load_both_web, build_candidate_table,  build_graph, split_by_distance, pick_option
 from sys_func.make_trial import generate_trials
 from sys_func.frame_count import frame_timer
+from utils.neon_client import NullNeonClient, main_section_transition_events
 
 
 
@@ -46,7 +47,7 @@ from sys_func.frame_count import frame_timer
 # =========================
 # 5. Trial 실행 (UI)
 # =========================
-def run_trial(win, trial, handle,index):
+def _run_trial_impl(win, trial, handle, index, neon_client, section_state):
 
     cfg = UI_CONFIG
     left_option = trial["option1"]
@@ -224,6 +225,14 @@ def run_trial(win, trial, handle,index):
 
     marker_pos = (-WIDTH//2 + 120, -HEIGHT//2 + 120)
     marker_size = (50, 50)
+    trial_label = f"MAIN_T{index:03d}"
+
+    def neon_metadata(phase):
+        return {
+            "task_type": trial["task_type"],
+            "phase": phase,
+            "trial_index": index,
+        }
 
     def draw_scene(
         *,
@@ -248,6 +257,7 @@ def run_trial(win, trial, handle,index):
     def run_timed_phase(
         *,
         phase,
+        neon_phase,
         duration_frames,
         trigger_code,
         marker_frames,
@@ -269,6 +279,12 @@ def run_trial(win, trial, handle,index):
             if frame_count == 0:
                 if reset_trial_clock:
                     win.callOnFlip(clock.reset)
+                neon_client.call_on_flip(
+                    win,
+                    main_section_transition_events(index, neon_phase),
+                    **neon_metadata(neon_phase),
+                )
+                section_state["open"] = True
                 win.callOnFlip(
                     send_trigger,
                     handle,
@@ -290,6 +306,8 @@ def run_trial(win, trial, handle,index):
                 task_type=trial["task_type"],
                 phase=phase,
             )
+            if "escape" in event.getKeys(keyList=["escape"]):
+                core.quit()
 
         return onset_flip_time
 
@@ -297,6 +315,7 @@ def run_trial(win, trial, handle,index):
 
     question_onset = run_timed_phase(
         phase="question_onset",
+        neon_phase="question",
         duration_frames=QUESTION_FRAMES,
         trigger_code=TRIG_B_QUESTION_ON,
         marker_frames=FRAME_EXAMPLE_bq,
@@ -304,6 +323,7 @@ def run_trial(win, trial, handle,index):
     )
     premise_onset = run_timed_phase(
         phase="premise_onset",
+        neon_phase="premise",
         duration_frames=REVEAL_FRAMES,
         trigger_code=TRIG_B_PREMISE_ON,
         marker_frames=FRAME_EXAMPLE_bp,
@@ -311,6 +331,7 @@ def run_trial(win, trial, handle,index):
     )
     option_left_onset = run_timed_phase(
         phase="option_left_onset",
+        neon_phase="option_left",
         duration_frames=REVEAL_FRAMES,
         trigger_code=TRIG_B_OPTION_LEFT_ON,
         marker_frames=FRAME_EXAMPLE_bl,
@@ -319,6 +340,7 @@ def run_trial(win, trial, handle,index):
     )
     option_right_onset = run_timed_phase(
         phase="option_right_onset",
+        neon_phase="option_right",
         duration_frames=REVEAL_FRAMES,
         trigger_code=TRIG_B_OPTION_RIGHT_ON,
         marker_frames=FRAME_EXAMPLE_br,
@@ -349,6 +371,12 @@ def run_trial(win, trial, handle,index):
 
         if frame_count == 0:
             win.callOnFlip(rt2_clock.reset)
+            neon_client.call_on_flip(
+                win,
+                main_section_transition_events(index, "choice"),
+                **neon_metadata("choice"),
+            )
+            section_state["open"] = True
             win.callOnFlip(
                 send_trigger,
                 handle,
@@ -387,6 +415,11 @@ def run_trial(win, trial, handle,index):
         rt2 = rt2_clock.getTime()
 
         if key == "escape":
+            neon_client.enqueue_event(
+                "MAIN_SECTION_END",
+                metadata=neon_metadata("choice"),
+            )
+            section_state["open"] = False
             core.quit()
 
         if key == "left":
@@ -408,6 +441,15 @@ def run_trial(win, trial, handle,index):
             task_type=trial["task_type"],
             phase="response",
         )
+        correctness = "CORRECT" if response == trial["correct"] else "WRONG"
+        neon_client.enqueue_events(
+            (
+                f"{trial_label}_RESPONSE_{response.upper()}_{correctness}",
+                "MAIN_SECTION_END",
+            ),
+            metadata=neon_metadata("choice"),
+        )
+        section_state["open"] = False
         break
 
     if response is None:
@@ -418,6 +460,11 @@ def run_trial(win, trial, handle,index):
             task_type=trial["task_type"],
             phase="no_response",
         )
+        neon_client.enqueue_events(
+            (f"{trial_label}_NO_RESPONSE", "MAIN_SECTION_END"),
+            metadata=neon_metadata("choice"),
+        )
+        section_state["open"] = False
 
     # 응답/무응답 트리거를 유지한 뒤 다음 feedback 프레임에서 reset한다.
     feedback_frames = cfg["timing"]["feedback_frames"]
@@ -446,6 +493,8 @@ def run_trial(win, trial, handle,index):
             task_type=trial["task_type"],
             phase="feedback",
         )
+        if "escape" in event.getKeys(keyList=["escape"]):
+            core.quit()
 
     def relative_to_question(flip_time):
         return round(flip_time - question_onset, 6)
@@ -467,6 +516,30 @@ def run_trial(win, trial, handle,index):
     return response, rt, rt2, trial_metadata
 
 
+def run_trial(win, trial, handle, index, neon_client=None):
+    neon_client = neon_client or NullNeonClient()
+    section_state = {"open": False}
+    try:
+        return _run_trial_impl(
+            win,
+            trial,
+            handle,
+            index,
+            neon_client,
+            section_state,
+        )
+    finally:
+        if section_state["open"]:
+            neon_client.enqueue_event(
+                "MAIN_SECTION_END",
+                metadata={
+                    "task_type": trial["task_type"],
+                    "phase": "abort",
+                    "trial_index": index,
+                },
+            )
+
+
 # =========================
 # 6. 전체 실행
 # =========================
@@ -476,8 +549,10 @@ def run_both_task(
     gene_json_path,
     habitat_json_path,
     handle,
+    neon_client=None,
     on_trial_complete=None,
 ):
+    neon_client = neon_client or NullNeonClient()
     
     # 1. 3개의 JSON 파일 경로를 넣어 전체 180개의 트라이얼(15블록) 생성
     trials = generate_trials(food_json_path, gene_json_path, habitat_json_path)
@@ -490,31 +565,37 @@ def run_both_task(
         if (i - 1) % 10 == 0:
 
             if MODE==0:
-                show_all_food_phase(win, handle)
-                show_all_gene_phase(win, handle)
-                show_all_habitat_phase(win, handle)
+                show_all_food_phase(win, handle, neon_client=neon_client)
+                show_all_gene_phase(win, handle, neon_client=neon_client)
+                show_all_habitat_phase(win, handle, neon_client=neon_client)
 
             elif MODE==1:
                 #show_all_food_phase(win, handle)
-                show_all_gene_phase(win, handle)
-                show_all_habitat_phase(win, handle)
+                show_all_gene_phase(win, handle, neon_client=neon_client)
+                show_all_habitat_phase(win, handle, neon_client=neon_client)
         
 
             elif MODE==2:
-                show_all_food_phase(win, handle)
+                show_all_food_phase(win, handle, neon_client=neon_client)
                 #show_all_gene_phase(win, handle)
-                show_all_habitat_phase(win, handle)
+                show_all_habitat_phase(win, handle, neon_client=neon_client)
         
             elif MODE==3:
-                show_all_food_phase(win, handle)
-                show_all_gene_phase(win, handle)
+                show_all_food_phase(win, handle, neon_client=neon_client)
+                show_all_gene_phase(win, handle, neon_client=neon_client)
                 #show_all_habitat_phase(win, handle)
 
         # 정보 화면이 있는 trial도 질문 직전에 동일한 ISI를 둔다.
         random_isi_phase(win)
 
         # 4. 트라이얼 실행
-        response, rt, rt2, trial_metadata = run_trial(win, t, handle, i)
+        response, rt, rt2, trial_metadata = run_trial(
+            win,
+            t,
+            handle,
+            i,
+            neon_client=neon_client,
+        )
 
         # 5. 정답 확인 및 결과 저장
         is_correct = (response == t["correct"]) if response else False

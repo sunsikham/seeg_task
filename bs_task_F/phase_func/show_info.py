@@ -6,6 +6,7 @@ from utils.labjack_trigger import send_trigger, reset_trigger, TRIG_FOOD_SHOW, T
 from config import FRAME_EXAMPLE_fa,FRAME_EXAMPLE_ga,FRAME_EXAMPLE_fr,FRAME_EXAMPLE_gr,FRAME_EXAMPLE_ha, FRAME_EXAMPLE_hr, WIDTH, HEIGHT, STIMULI_DIR
 from draw_func.draw_marker import draw_white_marker
 from sys_func.frame_count import frame_timer
+from utils.neon_client import NullNeonClient
 
 
 # =========================================
@@ -24,274 +25,127 @@ def load_image_paths(folder_path):
     return sorted(files)
 
 
-# =========================================
-# 1. food 전체 6개 보여주기 (ENTER 종료)
-# =========================================
-def show_all_food_phase(
+def _show_all_phase(
     win,
-    handle
+    handle,
+    *,
+    domain,
+    config_key,
+    image_parts,
+    background_color,
+    trigger_code,
+    marker_frames,
+    neon_client=None,
 ):
-
-    cfg = UI_CONFIG["image_phase"]["food_all"]
-
-   
-
-    image_paths = (
-    os.path.join(STIMULI_DIR, "food", "먹이사슬.png")
-    )
-
+    neon_client = neon_client or NullNeonClient()
+    cfg = UI_CONFIG["image_phase"][config_key]
     stim = visual.ImageStim(
         win,
-        image=image_paths,
+        image=os.path.join(STIMULI_DIR, *image_parts),
         pos=cfg["position"],
-        size=cfg["size"]
+        size=cfg["size"],
     )
-
-    # 현재 배경색 저장
     original_color = win.color
+    win.color = background_color
+    occurrence = neon_client.next_occurrence(f"{domain}_info")
+    section_start = f"{domain.upper()}_INFO_SECTION_START"
+    section_end = f"{domain.upper()}_INFO_SECTION_END"
+    identifier = f"{domain.upper()}_INFO_O{occurrence:03d}"
+    metadata = {
+        "task_type": f"{domain}_info",
+        "phase": "info_screen",
+        "trial_index": occurrence,
+    }
 
-    # 배경색 변경 (분홍색)
-    win.color = [1, 0.75, 0.85]  # rgb 기준 pink 느낌
+    event.clearEvents(eventType="keyboard")
+    frame_count = 0
+    section_open = False
 
-     # 이전 Enter 제거
-    event.clearEvents(eventType='keyboard')
+    try:
+        while True:
+            if frame_count < marker_frames:
+                draw_white_marker(
+                    win,
+                    pos=(-WIDTH // 2 + 120, -HEIGHT // 2 + 120),
+                    size=(50, 50),
+                )
 
-    # 배경 먼저 출력
-    flip_time = win.flip()
+            if frame_count == 0:
+                win.callOnFlip(send_trigger, handle, trigger_code)
+                neon_client.call_on_flip(
+                    win,
+                    (section_start, identifier),
+                    **metadata,
+                )
+                section_open = True
+            elif frame_count == 1:
+                win.callOnFlip(reset_trigger, handle)
 
-    frame_timer(
-        flip_time=flip_time,
-        trial_index=None,
-        task_type="food",
-        phase="info_screen"
-    )
-
-    frame_count=0
-
-    # ===== frame loop =====
-    while True:
-
-        if frame_count < FRAME_EXAMPLE_fa:
-            draw_white_marker(
-                win,
-                pos=(-WIDTH//2 + 120, -HEIGHT//2 + 120),
-                size=(50, 50)
+            stim.draw()
+            flip_time = win.flip()
+            frame_timer(
+                flip_time=flip_time,
+                trial_index=occurrence,
+                task_type=domain,
+                phase="info_screen",
             )
+            frame_count += 1
 
-         # trigger ON
-        if frame_count == 0:
-
-            win.callOnFlip(
-                send_trigger,
-                handle,
-                TRIG_FOOD_SHOW
-            )
-
-        # trigger OFF
-        elif frame_count == 1:
-
-            win.callOnFlip(
-                reset_trigger,
-                handle
-            )
+            keys = event.getKeys(keyList=["return", "escape"])
+            if "return" in keys:
+                neon_client.enqueue_event(section_end, metadata=metadata)
+                section_open = False
+                break
+            if "escape" in keys:
+                neon_client.enqueue_event(section_end, metadata=metadata)
+                section_open = False
+                core.quit()
+    finally:
+        if section_open:
+            neon_client.enqueue_event(section_end, metadata=metadata)
+        win.color = original_color
 
 
-        stim.draw()
-
-        frame_count+=1
-
-        flip_time = win.flip()
-
-        frame_timer(
-            flip_time=flip_time,
-            trial_index=None,
-            task_type="food",
-            phase="info_screen"
-        )
-
-
-
-        # ENTER 입력 확인
-        keys = event.getKeys()
-
-        if "return" in keys:
-            break
-
-        
-
-    # 원래 배경색 복구
-    win.color = original_color
-
-# =========================================
-# 2. gene 전체 3개 보여주기 (ENTER 종료)
-# =========================================
-def show_all_gene_phase(
-    win,
-    handle
-):
-
-    cfg = UI_CONFIG["image_phase"]["gene_all"]
-
-    image_paths = (
-    os.path.join(STIMULI_DIR, "gene", "유전자.png")
-    )
-
-    stim = visual.ImageStim(
+def show_all_food_phase(win, handle, neon_client=None):
+    _show_all_phase(
         win,
-        image=image_paths,
-        pos=cfg["position"],
-        size=cfg["size"]
+        handle,
+        domain="food",
+        config_key="food_all",
+        image_parts=("food", "먹이사슬.png"),
+        background_color=[1, 0.75, 0.85],
+        trigger_code=TRIG_FOOD_SHOW,
+        marker_frames=FRAME_EXAMPLE_fa,
+        neon_client=neon_client,
     )
 
-    # 현재 배경색 저장
-    original_color = win.color
 
-    # 배경색 변경 (분홍색)
-    win.color = [0.75, 0.9, 1]  # rgb 기준 pink 느낌
-
-    event.clearEvents(eventType='keyboard')
-
-    frame_count=0
-
-    # ===== frame loop =====
-    while True:
-
-        if frame_count < FRAME_EXAMPLE_ga:
-            draw_white_marker(
-                win,
-                pos=(-WIDTH//2 + 120, -HEIGHT//2 + 120),
-                size=(50, 50)
-            )
-
-         # trigger ON
-        if frame_count == 0:
-
-            win.callOnFlip(
-                send_trigger,
-                handle,
-                TRIG_GENE_SHOW
-            )
-
-        # trigger OFF
-        elif frame_count == 1:
-
-            win.callOnFlip(
-                reset_trigger,
-                handle
-            )
-
-
-        stim.draw()
-
-        frame_count+=1
-
-        flip_time = win.flip()
-
-        frame_timer(
-            flip_time=flip_time,
-            trial_index=None,
-            task_type="gene",
-            phase="info_screen"
-        )
-
-
-
-        # ENTER 입력 확인
-        keys = event.getKeys()
-
-        if "return" in keys:
-            break
-
-        
-
-    # 원래 배경색 복구
-    win.color = original_color
-
-
-# =========================================
-# 2. 서식지 전체 보여주기 (ENTER 종료)
-# =========================================
-def show_all_habitat_phase(
-    win,
-    handle
-):
-
-    cfg = UI_CONFIG["image_phase"]["habitat_all"]
-
-    image_paths = (
-    os.path.join(STIMULI_DIR, "habitat", "서식지.png")
-    )
-
-    stim = visual.ImageStim(
+def show_all_gene_phase(win, handle, neon_client=None):
+    _show_all_phase(
         win,
-        image=image_paths,
-        pos=cfg["position"],
-        size=cfg["size"]
+        handle,
+        domain="gene",
+        config_key="gene_all",
+        image_parts=("gene", "유전자.png"),
+        background_color=[0.75, 0.9, 1],
+        trigger_code=TRIG_GENE_SHOW,
+        marker_frames=FRAME_EXAMPLE_ga,
+        neon_client=neon_client,
     )
 
-    # 현재 배경색 저장
-    original_color = win.color
 
-    # 배경색 변경 
-    win.color = [0.7, 1, 0.7]  
-
-    event.clearEvents(eventType='keyboard')
-
-    frame_count=0
-
-    # ===== frame loop =====
-    while True:
-
-        if frame_count < FRAME_EXAMPLE_ha:
-            draw_white_marker(
-                win,
-                pos=(-WIDTH//2 + 120, -HEIGHT//2 + 120),
-                size=(50, 50)
-            )
-
-         # trigger ON
-        if frame_count == 0:
-
-            win.callOnFlip(
-                send_trigger,
-                handle,
-                TRIG_HABITAT_SHOW
-            )
-
-        # trigger OFF
-        elif frame_count == 1:
-
-            win.callOnFlip(
-                reset_trigger,
-                handle
-            )
-
-
-        stim.draw()
-
-        frame_count+=1
-
-        flip_time = win.flip()
-
-        frame_timer(
-            flip_time=flip_time,
-            trial_index=None,
-            task_type="habitat",
-            phase="info_screen"
-        )
-
-
-
-        # ENTER 입력 확인
-        keys = event.getKeys()
-
-        if "return" in keys:
-            break
-
-        
-
-    # 원래 배경색 복구
-    win.color = original_color
+def show_all_habitat_phase(win, handle, neon_client=None):
+    _show_all_phase(
+        win,
+        handle,
+        domain="habitat",
+        config_key="habitat_all",
+        image_parts=("habitat", "서식지.png"),
+        background_color=[0.7, 1, 0.7],
+        trigger_code=TRIG_HABITAT_SHOW,
+        marker_frames=FRAME_EXAMPLE_ha,
+        neon_client=neon_client,
+    )
 
 
 # =========================================

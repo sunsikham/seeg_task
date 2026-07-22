@@ -65,6 +65,7 @@ from config import (
 )
 from phase_func.show_info import show_all_food_phase
 from sys_func.frame_count import frame_timer
+from utils.neon_client import CheckSectionController, NullNeonClient
  
 import json, random, os, csv, datetime
 from psychopy import visual, core, event
@@ -257,7 +258,7 @@ def draw_white_marker_local(win, pos, size):
  
  
 # ── 단일 페이즈 실행 함수 ─────────────────────────────────────────────────────
-def run_phase(win, kb, phase_def, food_edges, all_animals,handle):
+def run_phase(win, kb, phase_def, food_edges, all_animals, handle, section_controller):
     """
     하나의 페이즈(먹이사슬 그룹)를 실행합니다.
     반환: 해당 페이즈의 결과 리스트
@@ -439,6 +440,10 @@ def run_phase(win, kb, phase_def, food_edges, all_animals,handle):
             # 트라이얼 시작 트리거: 새 트라이얼 첫 프레임에만 발송
             if phase_frame_count == 0:
                 win.callOnFlip(send_trigger, handle, TRIG_F_CHECK_START)
+                section_controller.begin_response_on_flip(
+                    win,
+                    phase_def["name"],
+                )
             elif phase_frame_count == 1:
                 win.callOnFlip(reset_trigger, handle)
  
@@ -469,8 +474,8 @@ def run_phase(win, kb, phase_def, food_edges, all_animals,handle):
                 k = key.name
  
                 if k == "escape":
-                    running = False
-                    break
+                    section_controller.abort_open_section()
+                    core.quit()
  
                 elif k == "left":
                     selected_choice = max(0, selected_choice - 1)
@@ -492,6 +497,8 @@ def run_phase(win, kb, phase_def, food_edges, all_animals,handle):
                         sibling = 2 if active_slot == 1 else 1
                         if slot_filled[sibling] and slot_content[sibling] == chosen_name:
                             is_correct = False
+
+                    section_controller.record_response(is_correct)
  
                     results.append({
                         "phase":        phase_def["name"],
@@ -519,6 +526,7 @@ def run_phase(win, kb, phase_def, food_edges, all_animals,handle):
         elif phase_mode == "feedback":
             if phase_frame_count == 0:
                 win.callOnFlip(send_trigger, handle, TRIG_F_CHECK_RESPOND)
+                section_controller.begin_feedback_on_flip(win)
             elif phase_frame_count == 1:
                 win.callOnFlip(reset_trigger, handle)
  
@@ -541,8 +549,12 @@ def run_phase(win, kb, phase_def, food_edges, all_animals,handle):
             )
             frame_n += 1
             phase_frame_count += 1
- 
+            escape_keys = kb.getKeys(["escape"], waitRelease=False)
+            if any(key.duration is None for key in escape_keys):
+                core.quit()
+
             if phase_frame_count >= FEEDBACK_FRAMES:
+                section_controller.end_feedback()
                 feedback_state["slot"]   = None
                 feedback_state["choice"] = None
                 feedback_state["color"]  = None
@@ -581,7 +593,10 @@ def run_phase(win, kb, phase_def, food_edges, all_animals,handle):
             )
             frame_n += 1
             phase_frame_count += 1
- 
+            escape_keys = kb.getKeys(["escape"], waitRelease=False)
+            if any(key.duration is None for key in escape_keys):
+                core.quit()
+
             if phase_frame_count >= DONE_FRAMES:
                 running = False
  
@@ -589,7 +604,7 @@ def run_phase(win, kb, phase_def, food_edges, all_animals,handle):
  
  
 # ── 메인 태스크 함수 ──────────────────────────────────────────────────────────
-def run_food_task(win,handle):
+def _run_food_task_impl(win, handle, section_controller):
     """
     동물 먹이사슬 태스크 실행 (3페이즈).
     win: 메인에서 이미 생성된 psychopy.visual.Window 객체
@@ -619,9 +634,28 @@ def run_food_task(win,handle):
                 task_type="food_check",
                 phase="isi"
             )
- 
-        phase_results = run_phase(win, kb, phase_def, food_edges, all_animals,handle)
+            escape_keys = kb.getKeys(["escape"], waitRelease=False)
+            if any(key.duration is None for key in escape_keys):
+                core.quit()
+
+        phase_results = run_phase(
+            win,
+            kb,
+            phase_def,
+            food_edges,
+            all_animals,
+            handle,
+            section_controller,
+        )
         all_results.extend(phase_results)
- 
+
     return all_results
- 
+
+
+def run_food_task(win, handle, neon_client=None):
+    neon_client = neon_client or NullNeonClient()
+    section_controller = CheckSectionController(neon_client, "food")
+    try:
+        return _run_food_task_impl(win, handle, section_controller)
+    finally:
+        section_controller.abort_open_section()

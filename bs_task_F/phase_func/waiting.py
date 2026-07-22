@@ -1,5 +1,5 @@
 import random
-from psychopy import event
+from psychopy import core, event
 from config import ISI_MAX_S, ISI_MIN_S, seconds_to_frames
 from sys_func.frame_count import frame_timer, reset_frame_timer
 
@@ -20,6 +20,8 @@ def random_isi_phase(win, min_time=ISI_MIN_S, max_time=ISI_MAX_S):
             task_type="isi",
             phase="blank",
         )
+        if "escape" in event.getKeys(keyList=["escape"]):
+            core.quit()
 
     reset_frame_timer()
 

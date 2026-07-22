@@ -18,7 +18,9 @@ def attention_check(win):
         flip_time = win.flip()
         frame_timer(flip_time)
 
-        keys = event.getKeys()
+        keys = event.getKeys(keyList=["return", "escape"])
 
         if "return" in keys:   # Enter key
             break
+        if "escape" in keys:
+            core.quit()

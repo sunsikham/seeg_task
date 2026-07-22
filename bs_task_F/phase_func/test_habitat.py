@@ -77,6 +77,7 @@ from config import (
 )
 from phase_func.show_info import  show_all_habitat_phase
 from sys_func.frame_count import frame_timer
+from utils.neon_client import CheckSectionController, NullNeonClient
  
 import json, random, os, csv, datetime
 from psychopy import visual, core, event
@@ -159,7 +160,7 @@ def draw_white_marker_local(win, pos, size):
  
  
 # ── 메인 함수 ─────────────────────────────────────────────────────────────────
-def run_habitat_task(win, handle):
+def _run_habitat_task_impl(win, handle, section_controller):
     kb = keyboard.Keyboard()
  
     with open(JSON_PATH, encoding="utf-8") as f:
@@ -313,6 +314,7 @@ def run_habitat_task(win, handle):
  
             if phase_frame_count == 0:
                 win.callOnFlip(send_trigger, handle, TRIG_H_CHECK_START)
+                section_controller.begin_response_on_flip(win, "placement")
             elif phase_frame_count == 1:
                 win.callOnFlip(reset_trigger, handle)
  
@@ -346,7 +348,8 @@ def run_habitat_task(win, handle):
                 k = key.name
  
                 if k == "escape":
-                    running = False; break
+                    section_controller.abort_open_section()
+                    core.quit()
  
                 elif k == "left":
                     # 하단 바에서 왼쪽으로 이동 (배치된 건 건너뜀)
@@ -376,6 +379,7 @@ def run_habitat_task(win, handle):
                     a = all_animals[cur_animal_idx]
                     if not bar_placed[cur_animal_idx] and not slot_filled[cur_slot]:
                         is_correct = (a["name"] == SLOT_LABELS[cur_slot])
+                        section_controller.record_response(is_correct)
                         results.append({
                             "animal":     a["name"],
                             "slot_idx":   cur_slot,
@@ -400,6 +404,7 @@ def run_habitat_task(win, handle):
  
             if phase_frame_count == 0:
                 win.callOnFlip(send_trigger, handle, TRIG_H_CHECK_RESPOND)
+                section_controller.begin_feedback_on_flip(win)
             elif phase_frame_count == 1:
                 win.callOnFlip(reset_trigger, handle)
  
@@ -423,8 +428,12 @@ def run_habitat_task(win, handle):
 
             frame_n += 1
             phase_frame_count += 1
- 
+            escape_keys = kb.getKeys(["escape"], waitRelease=False)
+            if any(key.duration is None for key in escape_keys):
+                core.quit()
+
             if phase_frame_count >= FEEDBACK_FRAMES:
+                section_controller.end_feedback()
                 feedback_state["slot"]  = None
                 feedback_state["color"] = None
  
@@ -464,7 +473,11 @@ def run_habitat_task(win, handle):
                         slot_filled = [False] * N
                         q_count=0
                             
-                        show_all_habitat_phase(win, handle)
+                        show_all_habitat_phase(
+                            win,
+                            handle,
+                            neon_client=section_controller.neon_client,
+                        )
                         event.clearEvents(eventType='keyboard')
                         wrong_count=0
  
@@ -485,9 +498,20 @@ def run_habitat_task(win, handle):
             )
             frame_n += 1
             phase_frame_count += 1
+            escape_keys = kb.getKeys(["escape"], waitRelease=False)
+            if any(key.duration is None for key in escape_keys):
+                core.quit()
             if phase_frame_count >= DONE_FRAMES:
                 running = False
  
    
     return results
- 
+
+
+def run_habitat_task(win, handle, neon_client=None):
+    neon_client = neon_client or NullNeonClient()
+    section_controller = CheckSectionController(neon_client, "habitat")
+    try:
+        return _run_habitat_task_impl(win, handle, section_controller)
+    finally:
+        section_controller.abort_open_section()

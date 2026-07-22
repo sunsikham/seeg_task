@@ -65,6 +65,7 @@ from config import (
 )
 from phase_func.show_info import  show_all_gene_phase
 from sys_func.frame_count import frame_timer
+from utils.neon_client import CheckSectionController, NullNeonClient
  
 import json, random, os, csv, datetime
 from psychopy import visual, core, event
@@ -228,7 +229,7 @@ def draw_white_marker_local(win, pos, size):
  
  
 # ── 단일 페이즈 실행 ──────────────────────────────────────────────────────────
-def run_gene_phase(win, kb, phase_def,handle):
+def run_gene_phase(win, kb, phase_def, handle, section_controller):
     slot_pos    = phase_def["slot_pos"]
     slot_valid  = phase_def["slot_valid"]
     slot_labels = phase_def.get("slot_labels", ["?"] * len(slot_pos))
@@ -389,6 +390,10 @@ def run_gene_phase(win, kb, phase_def,handle):
         if phase_mode == "wait_response":
             if phase_frame_count == 0:
                 win.callOnFlip(send_trigger, handle, TRIG_G_CHECK_START)
+                section_controller.begin_response_on_flip(
+                    win,
+                    phase_def["name"],
+                )
             elif phase_frame_count == 1:
                 win.callOnFlip(reset_trigger, handle)
  
@@ -419,8 +424,8 @@ def run_gene_phase(win, kb, phase_def,handle):
                 k = key.name
  
                 if k == "escape":
-                    running = False
-                    break
+                    section_controller.abort_open_section()
+                    core.quit()
                 elif k == "left":
                     selected_choice = max(0, selected_choice - 1)
                 elif k == "right":
@@ -430,6 +435,7 @@ def run_gene_phase(win, kb, phase_def,handle):
                         continue
  
                     chosen_name = choices[selected_choice]
+                    response_recorded = False
  
                     # 정답 검증: slot_valid 안에 있어야 하고, 짝꿍 슬롯과 중복 불가
                     is_correct = chosen_name in slot_valid[active_slot]
@@ -451,15 +457,24 @@ def run_gene_phase(win, kb, phase_def,handle):
                         wrong_count+=1
 
                         if wrong_count>=5:
+                            section_controller.record_response(is_correct)
+                            response_recorded = True
                             event.clearEvents(eventType='keyboard')
 
                             slot_filled  = [False] * n_slots
                             slot_content = [None]  * n_slots
                             slot_imgs    = [None]  * n_slots
                             
-                            show_all_gene_phase(win, handle)
+                            show_all_gene_phase(
+                                win,
+                                handle,
+                                neon_client=section_controller.neon_client,
+                            )
                             event.clearEvents(eventType='keyboard')
                             wrong_count=0
+
+                    if not response_recorded:
+                        section_controller.record_response(is_correct)
  
                     results.append({
                         "phase":     phase_def["name"],
@@ -487,6 +502,7 @@ def run_gene_phase(win, kb, phase_def,handle):
         elif phase_mode == "feedback":
             if phase_frame_count == 0:
                 win.callOnFlip(send_trigger, handle, TRIG_G_CHECK_RESPOND)
+                section_controller.begin_feedback_on_flip(win)
             elif phase_frame_count == 1:
                 win.callOnFlip(reset_trigger, handle)
  
@@ -510,8 +526,12 @@ def run_gene_phase(win, kb, phase_def,handle):
 
             frame_n += 1
             phase_frame_count += 1
- 
+            escape_keys = kb.getKeys(["escape"], waitRelease=False)
+            if any(key.duration is None for key in escape_keys):
+                core.quit()
+
             if phase_frame_count >= FEEDBACK_FRAMES:
+                section_controller.end_feedback()
                 feedback_state["slot"]   = None
                 feedback_state["choice"] = None
                 feedback_state["color"]  = None
@@ -550,6 +570,9 @@ def run_gene_phase(win, kb, phase_def,handle):
 
             frame_n += 1
             phase_frame_count += 1
+            escape_keys = kb.getKeys(["escape"], waitRelease=False)
+            if any(key.duration is None for key in escape_keys):
+                core.quit()
  
             if phase_frame_count >= DONE_FRAMES:
                 running = False
@@ -558,7 +581,7 @@ def run_gene_phase(win, kb, phase_def,handle):
  
  
 # ── 메인 태스크 함수 ──────────────────────────────────────────────────────────
-def run_gene_task(win,handle):
+def _run_gene_task_impl(win, handle, section_controller):
     """
     유전자(계통수) 분류 태스크 실행.
     페이즈 순서는 매 실행마다 랜덤하게 섞입니다.
@@ -582,9 +605,26 @@ def run_gene_task(win,handle):
                 task_type="gene_check",
                 phase="isi"
             )
+            escape_keys = kb.getKeys(["escape"], waitRelease=False)
+            if any(key.duration is None for key in escape_keys):
+                core.quit()
         
-        phase_results = run_gene_phase(win, kb, phase_def,handle)
+        phase_results = run_gene_phase(
+            win,
+            kb,
+            phase_def,
+            handle,
+            section_controller,
+        )
         all_results.extend(phase_results)
- 
+
     return all_results
- 
+
+
+def run_gene_task(win, handle, neon_client=None):
+    neon_client = neon_client or NullNeonClient()
+    section_controller = CheckSectionController(neon_client, "gene")
+    try:
+        return _run_gene_task_impl(win, handle, section_controller)
+    finally:
+        section_controller.abort_open_section()

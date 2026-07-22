@@ -19,7 +19,13 @@ def _save_workbook_atomic(wb, file_path):
             os.remove(temp_file_path)
 
 
-def save_results_to_excel(results, save_dir="data", filename="results.xlsx"):
+def save_results_to_excel(
+    results,
+    save_dir="data",
+    filename="results.xlsx",
+    session_id="",
+    neon_recording_id="",
+):
 
     os.makedirs(save_dir, exist_ok=True)
     file_path = os.path.join(save_dir, filename)
@@ -33,6 +39,8 @@ def save_results_to_excel(results, save_dir="data", filename="results.xlsx"):
     # =========================
     headers = [
         "index",
+        "session_id",
+        "neon_recording_id",
         "trial_id",       # JSON에 적어둔 문제 번호
         "domain",         # 화면 출력용 대분류 (food, gene, habitat)
         "task_type",      # 세부 유형 (Food, Tree, Conflict, Habitat, Tree-conflict 등)
@@ -69,6 +77,8 @@ def save_results_to_excel(results, save_dir="data", filename="results.xlsx"):
         idx+=1
         ws.append([
             idx,
+            session_id,
+            neon_recording_id or "",
             r.get("trial_id", ""),
             r.get("domain", ""),
             r.get("task_type", ""),
@@ -106,6 +116,8 @@ def save_check_results_to_excel(
     task_type,
     save_dir="data",
     filename="check_results.xlsx",
+    session_id="",
+    neon_recording_id="",
 ):
     os.makedirs(save_dir, exist_ok=True)
     file_path = os.path.join(save_dir, filename)
@@ -116,6 +128,8 @@ def save_check_results_to_excel(
 
     headers = [
         "attempt_index",
+        "session_id",
+        "neon_recording_id",
         "task_type",
         "phase",
         "animal",
@@ -130,6 +144,8 @@ def save_check_results_to_excel(
     for attempt_index, result in enumerate(results, start=1):
         ws.append([
             attempt_index,
+            session_id,
+            neon_recording_id or "",
             task_type,
             result.get("phase", ""),
             result.get("animal", ""),
@@ -144,7 +160,13 @@ def save_check_results_to_excel(
 
     return file_path
 
-def save_results_to_excel_A(results, save_dir="data", filename="results.xlsx"):
+def save_results_to_excel_A(
+    results,
+    save_dir="data",
+    filename="results.xlsx",
+    session_id="",
+    neon_recording_id="",
+):
 
     # =========================
     # 1. 폴더 생성
@@ -164,6 +186,8 @@ def save_results_to_excel_A(results, save_dir="data", filename="results.xlsx"):
     # =========================
     headers = [
         "trial_index",
+        "session_id",
+        "neon_recording_id",
         "animal_a",
         "animal_b",
         "correct_answer",   # 1 (O) / 0 (X)
@@ -180,6 +204,8 @@ def save_results_to_excel_A(results, save_dir="data", filename="results.xlsx"):
 
         ws.append([
             i,
+            session_id,
+            neon_recording_id or "",
             r.get("animal_a"),
             r.get("animal_b"),
             r.get("correct_answer"),
