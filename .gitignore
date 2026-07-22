@@ -13,6 +13,9 @@ bs_task_F/Data/
 *.pptx
 bs_task_F/sounds/
 
+# Separate repository for LLM analysis
+seeg_llm_analysis/
+
 # Generated EDF profiling artifacts
 artifact.json
 edf_profile.json
